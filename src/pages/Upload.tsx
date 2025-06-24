@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import AppLayout from "@/components/layout/AppLayout";
+import { useFileUpload } from "@/hooks/useFileUpload";
 import {
   Upload as UploadIcon,
   FileText,
@@ -19,116 +20,16 @@ import {
   Smartphone,
 } from "lucide-react";
 
-interface UploadedFile {
-  file: File;
-  id: string;
-  status: "uploading" | "processing" | "completed" | "error";
-  progress: number;
-  transactionCount?: number;
-  source?: "GPay" | "PhonePe" | "Paytm" | "Bank" | "Unknown";
-  dateRange?: { from: Date; to: Date };
-  error?: string;
-}
-
 const Upload = () => {
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragActive, setIsDragActive] = useState(false);
-
-  const processFile = async (file: File): Promise<void> => {
-    const fileId = Math.random().toString(36).substr(2, 9);
-
-    // Add file to upload list
-    const newFile: UploadedFile = {
-      file,
-      id: fileId,
-      status: "uploading",
-      progress: 0,
-    };
-
-    setUploadedFiles((prev) => [...prev, newFile]);
-
-    try {
-      // Simulate file upload progress
-      for (let progress = 0; progress <= 100; progress += 10) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        setUploadedFiles((prev) =>
-          prev.map((f) => (f.id === fileId ? { ...f, progress } : f)),
-        );
-      }
-
-      // Update to processing status
-      setUploadedFiles((prev) =>
-        prev.map((f) =>
-          f.id === fileId ? { ...f, status: "processing", progress: 0 } : f,
-        ),
-      );
-
-      // Simulate processing
-      for (let progress = 0; progress <= 100; progress += 20) {
-        await new Promise((resolve) => setTimeout(resolve, 200));
-        setUploadedFiles((prev) =>
-          prev.map((f) => (f.id === fileId ? { ...f, progress } : f)),
-        );
-      }
-
-      // Mock data extraction based on file name/content
-      const mockResult = mockProcessFile(file);
-
-      // Update to completed status
-      setUploadedFiles((prev) =>
-        prev.map((f) =>
-          f.id === fileId
-            ? {
-                ...f,
-                status: "completed",
-                progress: 100,
-                ...mockResult,
-              }
-            : f,
-        ),
-      );
-    } catch (error) {
-      setUploadedFiles((prev) =>
-        prev.map((f) =>
-          f.id === fileId
-            ? {
-                ...f,
-                status: "error",
-                error: "Failed to process file",
-              }
-            : f,
-        ),
-      );
-    }
-  };
-
-  const mockProcessFile = (file: File) => {
-    const fileName = file.name.toLowerCase();
-    let source: UploadedFile["source"] = "Unknown";
-    let transactionCount = Math.floor(Math.random() * 150) + 50;
-
-    // Detect source based on filename patterns
-    if (fileName.includes("gpay") || fileName.includes("google")) {
-      source = "GPay";
-    } else if (fileName.includes("phonepe") || fileName.includes("phone")) {
-      source = "PhonePe";
-    } else if (fileName.includes("paytm")) {
-      source = "Paytm";
-    } else if (fileName.includes("bank") || fileName.includes("statement")) {
-      source = "Bank";
-    }
-
-    // Mock date range
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setMonth(endDate.getMonth() - 3);
-
-    return {
-      source,
-      transactionCount,
-      dateRange: { from: startDate, to: endDate },
-    };
-  };
+  const {
+    uploadedFiles,
+    isUploading,
+    processFile,
+    removeFile,
+    clearAllFiles,
+    getAllTransactions,
+  } = useFileUpload();
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     acceptedFiles.forEach((file) => {
@@ -152,11 +53,7 @@ const Upload = () => {
     maxSize: 10 * 1024 * 1024, // 10MB
   });
 
-  const removeFile = (fileId: string) => {
-    setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId));
-  };
-
-  const getStatusIcon = (status: UploadedFile["status"]) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
         return <CheckCircle className="h-5 w-5 text-green-400" />;
@@ -167,7 +64,7 @@ const Upload = () => {
     }
   };
 
-  const getSourceIcon = (source: UploadedFile["source"]) => {
+  const getSourceIcon = (source: string) => {
     return <Smartphone className="h-4 w-4" />;
   };
 
@@ -291,13 +188,15 @@ const Upload = () => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      {uploadedFile.source && (
+                      {uploadedFile.result?.source && (
                         <Badge
                           variant="outline"
                           className="border-purple-500/50 text-xs"
                         >
-                          {getSourceIcon(uploadedFile.source)}
-                          <span className="ml-1">{uploadedFile.source}</span>
+                          {getSourceIcon(uploadedFile.result.source)}
+                          <span className="ml-1">
+                            {uploadedFile.result.source}
+                          </span>
                         </Badge>
                       )}
                       <Button
@@ -327,40 +226,41 @@ const Upload = () => {
                   )}
 
                   {/* Success Details */}
-                  {uploadedFile.status === "completed" && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="h-4 w-4 text-green-400" />
-                        <span className="text-sm">
-                          {uploadedFile.transactionCount} transactions found
-                        </span>
-                      </div>
-                      {uploadedFile.dateRange && (
-                        <div className="text-sm text-foreground/70">
-                          {uploadedFile.dateRange.from.toLocaleDateString()} -{" "}
-                          {uploadedFile.dateRange.to.toLocaleDateString()}
+                  {uploadedFile.status === "completed" &&
+                    uploadedFile.result && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle className="h-4 w-4 text-green-400" />
+                          <span className="text-sm">
+                            {uploadedFile.result.summary.totalTransactions}{" "}
+                            transactions found
+                          </span>
                         </div>
-                      )}
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="glass border-purple-500/50"
-                        >
-                          <Eye className="h-3 w-3 mr-1" />
-                          Preview
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="glass border-purple-500/50"
-                        >
-                          <Download className="h-3 w-3 mr-1" />
-                          Export
-                        </Button>
+                        <div className="text-sm text-foreground/70">
+                          {uploadedFile.result.summary.dateRange.from.toLocaleDateString()}{" "}
+                          -{" "}
+                          {uploadedFile.result.summary.dateRange.to.toLocaleDateString()}
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="glass border-purple-500/50"
+                          >
+                            <Eye className="h-3 w-3 mr-1" />
+                            Preview
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="glass border-purple-500/50"
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            Export
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {/* Error State */}
                   {uploadedFile.status === "error" && (
@@ -384,7 +284,7 @@ const Upload = () => {
                   <Button
                     variant="outline"
                     className="glass border-purple-500/50"
-                    onClick={() => setUploadedFiles([])}
+                    onClick={clearAllFiles}
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Clear All
