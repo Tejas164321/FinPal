@@ -9,6 +9,7 @@ import Transactions from "./pages/Transactions";
 import Budgets from "./pages/Budgets";
 import AIInsights from "./pages/AIInsights";
 import Investments from "./pages/Investments";
+import Upload from "./pages/Upload";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/budgets" element={<Budgets />} />
           <Route path="/ai-insights" element={<AIInsights />} />
           <Route path="/investments" element={<Investments />} />
+          <Route path="/upload" element={<Upload />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
