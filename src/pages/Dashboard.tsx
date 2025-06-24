@@ -36,6 +36,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 
 // Mock data for demonstration
@@ -132,10 +133,12 @@ const Dashboard = () => {
             <Calendar className="h-4 w-4 mr-2" />
             {selectedPeriod}
           </Button>
-          <Button className="bg-purple-gradient">
-            <Upload className="h-4 w-4 mr-2" />
-            Upload Transactions
-          </Button>
+          <Link to="/upload">
+            <Button className="bg-purple-gradient">
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Transactions
+            </Button>
+          </Link>
         </div>
       </div>
 

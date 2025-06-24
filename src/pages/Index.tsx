@@ -188,14 +188,16 @@ const Index = () => {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Button
-                size="lg"
-                variant="outline"
-                className="glass border-purple-500/50 text-purple-400 hover:bg-purple-500/10 px-8 py-4 text-lg"
-              >
-                <Upload className="mr-2 h-5 w-5" />
-                Upload Transactions
-              </Button>
+              <Link to="/upload">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="glass border-purple-500/50 text-purple-400 hover:bg-purple-500/10 px-8 py-4 text-lg"
+                >
+                  <Upload className="mr-2 h-5 w-5" />
+                  Upload Transactions
+                </Button>
+              </Link>
             </div>
           </motion.div>
 
@@ -487,13 +489,16 @@ const Index = () => {
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="glass border-purple-500/50 text-purple-400 hover:bg-purple-500/10 px-8 py-4 text-lg"
-                >
-                  Watch Demo
-                </Button>
+                <Link to="/upload">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="glass border-purple-500/50 text-purple-400 hover:bg-purple-500/10 px-8 py-4 text-lg"
+                  >
+                    <Upload className="mr-2 h-5 w-5" />
+                    Try Upload Demo
+                  </Button>
+                </Link>
               </div>
             </div>
           </motion.div>
