@@ -37,6 +37,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
+import MobileNav from "@/components/layout/MobileNav";
 
 // Mock data for demonstration
 const monthlyData = [
@@ -120,9 +121,10 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-dark-gradient">
       <Sidebar />
+      <MobileNav />
 
       {/* Main Content */}
-      <div className="ml-64 p-6">
+      <div className="lg:ml-64 p-6 pt-20 lg:pt-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>

@@ -28,7 +28,7 @@ const Sidebar = () => {
   const location = useLocation();
 
   return (
-    <div className="fixed left-0 top-0 h-full w-64 glass-card border-r border-white/10 z-40">
+    <div className="hidden lg:block fixed left-0 top-0 h-full w-64 glass-card border-r border-white/10 z-40">
       <div className="p-6">
         <Link to="/" className="flex items-center space-x-2 mb-8">
           <div className="w-8 h-8 bg-purple-gradient rounded-lg flex items-center justify-center">
