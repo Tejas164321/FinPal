@@ -1,19 +1,21 @@
-const xlsx = require("node-xlsx");
+const XLSX = require("xlsx");
 const { detectSource } = require("./sourceDetector");
 
 async function processExcel(filePath, fileName) {
   try {
     console.log(`📊 Processing Excel file: ${fileName}`);
 
-    const workbook = xlsx.parse(filePath);
+    const workbook = XLSX.readFile(filePath);
     const source = detectSource(fileName);
 
     let transactions = [];
 
     // Process all worksheets
-    for (const worksheet of workbook) {
-      console.log(`📋 Processing worksheet: ${worksheet.name}`);
-      const sheetTransactions = parseWorksheet(worksheet.data, source);
+    for (const sheetName of workbook.SheetNames) {
+      console.log(`📋 Processing worksheet: ${sheetName}`);
+      const worksheet = workbook.Sheets[sheetName];
+      const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      const sheetTransactions = parseWorksheet(data, source);
       transactions = transactions.concat(sheetTransactions);
     }
 
