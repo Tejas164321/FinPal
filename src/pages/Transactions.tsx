@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Upload, Filter, Search, Download } from "lucide-react";
+import { Link } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
 
 const Transactions = () => {
@@ -33,10 +34,12 @@ const Transactions = () => {
                   <Search className="h-4 w-4 mr-2" />
                   Search
                 </Button>
-                <Button className="bg-purple-gradient">
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload CSV/PDF
-                </Button>
+                <Link to="/upload">
+                  <Button className="bg-purple-gradient">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload CSV/PDF
+                  </Button>
+                </Link>
               </div>
             </CardTitle>
           </CardHeader>
@@ -47,10 +50,12 @@ const Transactions = () => {
               Upload your UPI transaction history from GPay, PhonePe, or bank
               statements to get started with AI-powered analysis.
             </p>
-            <Button className="bg-purple-gradient">
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Your First File
-            </Button>
+            <Link to="/upload">
+              <Button className="bg-purple-gradient">
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Your First File
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       </div>
