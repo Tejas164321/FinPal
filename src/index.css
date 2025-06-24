@@ -8,84 +8,84 @@
    * Using HSL values as expected by tailwind.config.ts
    */
   :root {
-    /* FinPal uses dark theme by default */
-    --background: 240 23% 9%;
-    --foreground: 240 5% 96%;
+    /* AMOLED-optimized ultra-dark theme */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
 
-    --card: 240 23% 11%;
-    --card-foreground: 240 5% 96%;
+    --card: 240 100% 2%;
+    --card-foreground: 0 0% 96%;
 
-    --popover: 240 23% 11%;
-    --popover-foreground: 240 5% 96%;
+    --popover: 240 100% 1%;
+    --popover-foreground: 0 0% 96%;
 
-    --primary: 249 56% 58%;
-    --primary-foreground: 240 5% 96%;
+    --primary: 249 56% 60%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 15% 20%;
-    --secondary-foreground: 240 5% 96%;
+    --secondary: 240 100% 3%;
+    --secondary-foreground: 0 0% 90%;
 
-    --muted: 240 15% 20%;
-    --muted-foreground: 240 5% 65%;
+    --muted: 240 100% 4%;
+    --muted-foreground: 240 5% 70%;
 
-    --accent: 249 56% 58%;
-    --accent-foreground: 240 23% 9%;
+    --accent: 249 56% 60%;
+    --accent-foreground: 0 0% 0%;
 
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 240 5% 96%;
+    --destructive: 0 63% 35%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 240 15% 20%;
-    --input: 240 15% 15%;
-    --ring: 249 56% 58%;
+    --border: 240 100% 5%;
+    --input: 240 100% 3%;
+    --ring: 249 56% 60%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 240 23% 9%;
-    --sidebar-foreground: 240 5% 96%;
-    --sidebar-primary: 249 56% 58%;
-    --sidebar-primary-foreground: 240 5% 96%;
-    --sidebar-accent: 240 15% 20%;
-    --sidebar-accent-foreground: 240 5% 96%;
-    --sidebar-border: 240 15% 20%;
-    --sidebar-ring: 249 56% 58%;
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 96%;
+    --sidebar-primary: 249 56% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 100% 3%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 240 100% 4%;
+    --sidebar-ring: 249 56% 60%;
   }
 
   .dark {
-    --background: 240 23% 9%;
-    --foreground: 240 5% 96%;
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
 
-    --card: 240 23% 11%;
-    --card-foreground: 240 5% 96%;
+    --card: 240 100% 2%;
+    --card-foreground: 0 0% 96%;
 
-    --popover: 240 23% 11%;
-    --popover-foreground: 240 5% 96%;
+    --popover: 240 100% 1%;
+    --popover-foreground: 0 0% 96%;
 
-    --primary: 249 56% 58%;
-    --primary-foreground: 240 5% 96%;
+    --primary: 249 56% 60%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 15% 20%;
-    --secondary-foreground: 240 5% 96%;
+    --secondary: 240 100% 3%;
+    --secondary-foreground: 0 0% 90%;
 
-    --muted: 240 15% 20%;
-    --muted-foreground: 240 5% 65%;
+    --muted: 240 100% 4%;
+    --muted-foreground: 240 5% 70%;
 
-    --accent: 249 56% 58%;
-    --accent-foreground: 240 23% 9%;
+    --accent: 249 56% 60%;
+    --accent-foreground: 0 0% 0%;
 
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 240 5% 96%;
+    --destructive: 0 63% 35%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 240 15% 20%;
-    --input: 240 15% 15%;
-    --ring: 249 56% 58%;
+    --border: 240 100% 5%;
+    --input: 240 100% 3%;
+    --ring: 249 56% 60%;
 
-    --sidebar-background: 240 23% 9%;
-    --sidebar-foreground: 240 5% 96%;
-    --sidebar-primary: 249 56% 58%;
-    --sidebar-primary-foreground: 240 5% 96%;
-    --sidebar-accent: 240 15% 20%;
-    --sidebar-accent-foreground: 240 5% 96%;
-    --sidebar-border: 240 15% 20%;
-    --sidebar-ring: 249 56% 58%;
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 96%;
+    --sidebar-primary: 249 56% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 100% 3%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 240 100% 4%;
+    --sidebar-ring: 249 56% 60%;
   }
 }
 
@@ -100,32 +100,32 @@
 
   body {
     @apply bg-background text-foreground min-h-screen;
-    background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 50%, #252547 100%);
+    background: #000000;
     background-attachment: fixed;
   }
 }
 
 @layer components {
-  /* Glassmorphism utilities */
+  /* AMOLED-optimized glassmorphism utilities */
   .glass {
-    @apply backdrop-blur-md bg-white/5 border border-white/10;
+    @apply backdrop-blur-md bg-white/[0.02] border border-white/[0.05];
   }
 
   .glass-card {
-    @apply backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl;
+    @apply backdrop-blur-md bg-white/[0.02] border border-white/[0.05] rounded-2xl;
   }
 
   .glass-strong {
-    @apply backdrop-blur-lg bg-white/10 border border-white/20;
+    @apply backdrop-blur-lg bg-white/[0.04] border border-white/[0.08];
   }
 
-  /* Purple glow effects */
+  /* Purple glow effects optimized for AMOLED */
   .glow-purple {
-    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
   }
 
   .glow-purple-strong {
-    box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.6);
   }
 
   /* FinPal specific animations */

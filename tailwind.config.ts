@@ -62,7 +62,7 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        // FinPal brand colors
+        // FinPal brand colors - AMOLED optimized
         finpal: {
           purple: {
             50: "#f7f3ff",
@@ -78,15 +78,17 @@ export default {
             950: "#2e1065",
           },
           dark: {
-            100: "#0f0f23",
-            200: "#1a1a3a",
-            300: "#252547",
-            400: "#2d2d55",
-            500: "#373762",
-            600: "#44447a",
-            700: "#525292",
-            800: "#6161aa",
-            900: "#7171c2",
+            50: "#000000",
+            100: "#050505",
+            200: "#0a0a0a",
+            300: "#0f0f0f",
+            400: "#141414",
+            500: "#1a1a1a",
+            600: "#1f1f1f",
+            700: "#242424",
+            800: "#2a2a2a",
+            900: "#2f2f2f",
+            950: "#050505",
           },
         },
       },
@@ -149,11 +151,12 @@ export default {
       },
       backgroundImage: {
         "glass-gradient":
-          "linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%)",
+          "linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(139, 92, 246, 0.03) 100%)",
         "purple-gradient":
           "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%)",
         "dark-gradient":
-          "linear-gradient(135deg, #0f0f23 0%, #1a1a3a 50%, #252547 100%)",
+          "linear-gradient(135deg, #000000 0%, #050505 50%, #0a0a0a 100%)",
+        "amoled-gradient": "linear-gradient(135deg, #000000 0%, #000000 100%)",
       },
     },
   },
