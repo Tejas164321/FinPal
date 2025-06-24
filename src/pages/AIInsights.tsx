@@ -1,11 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Brain, MessageSquare, TrendingUp } from "lucide-react";
+import Sidebar from "@/components/layout/Sidebar";
 
 const AIInsights = () => {
   return (
-    <div className="min-h-screen bg-dark-gradient p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-dark-gradient">
+      <Sidebar />
+      <div className="ml-64 p-6">
+        <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">AI Insights</h1>
           <p className="text-foreground/70">
