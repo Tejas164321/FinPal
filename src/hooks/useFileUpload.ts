@@ -1,11 +1,6 @@
 import { useState, useCallback } from "react";
-import {
-  parseCSV,
-  detectFileSource,
-  generateSummary,
-  type Transaction,
-  type ProcessingResult,
-} from "@/lib/fileProcessing";
+import { uploadFile, checkHealth } from "@/lib/api";
+import { type Transaction, type ProcessingResult } from "@/lib/fileProcessing";
 
 export interface UploadedFile {
   file: File;
@@ -35,52 +30,29 @@ export const useFileUpload = () => {
 
     try {
       // Simulate upload progress
-      for (let progress = 0; progress <= 100; progress += 10) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        setUploadedFiles((prev) =>
-          prev.map((f) => (f.id === fileId ? { ...f, progress } : f)),
-        );
+      setUploadedFiles((prev) =>
+        prev.map((f) => (f.id === fileId ? { ...f, progress: 30 } : f)),
+      );
+
+      // Call backend API
+      const apiResult = await uploadFile(file);
+
+      if (!apiResult.success) {
+        throw new Error(apiResult.error || "Processing failed");
       }
 
       // Update to processing status
       setUploadedFiles((prev) =>
         prev.map((f) =>
-          f.id === fileId ? { ...f, status: "processing", progress: 0 } : f,
+          f.id === fileId ? { ...f, status: "processing", progress: 70 } : f,
         ),
       );
 
-      // Read file content
-      const content = await readFileContent(file);
-      const source = detectFileSource(file.name, content);
-
-      // Process based on file type
-      let transactions: Transaction[] = [];
-
-      if (file.type === "text/csv" || file.name.endsWith(".csv")) {
-        transactions = parseCSV(content);
-      } else if (file.type === "application/pdf") {
-        // PDF processing would go here - for now, mock data
-        transactions = generateMockTransactions(source);
-      } else {
-        throw new Error("Unsupported file format");
-      }
-
-      // Update source for all transactions
-      transactions = transactions.map((t) => ({ ...t, source }));
-
-      // Simulate processing progress
-      for (let progress = 0; progress <= 100; progress += 20) {
-        await new Promise((resolve) => setTimeout(resolve, 200));
-        setUploadedFiles((prev) =>
-          prev.map((f) => (f.id === fileId ? { ...f, progress } : f)),
-        );
-      }
-
-      const summary = generateSummary(transactions);
+      // Convert backend response to our frontend format
       const result: ProcessingResult = {
-        transactions,
-        summary,
-        source,
+        transactions: apiResult.data.transactions,
+        summary: apiResult.data.summary,
+        source: apiResult.data.source as any,
         errors: [],
       };
 
@@ -97,7 +69,10 @@ export const useFileUpload = () => {
             : f,
         ),
       );
+
+      console.log("✅ File processed successfully:", apiResult.data.fileName);
     } catch (error) {
+      console.error("❌ Upload error:", error);
       setUploadedFiles((prev) =>
         prev.map((f) =>
           f.id === fileId
@@ -116,57 +91,6 @@ export const useFileUpload = () => {
       setIsUploading(false);
     }
   }, []);
-
-  const readFileContent = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target?.result as string);
-      reader.onerror = () => reject(new Error("Failed to read file"));
-      reader.readAsText(file);
-    });
-  };
-
-  const generateMockTransactions = (source: string): Transaction[] => {
-    // Mock data generator for PDF files or unsupported formats
-    const transactions: Transaction[] = [];
-    const transactionCount = Math.floor(Math.random() * 100) + 50;
-
-    const mockMerchants = [
-      "Zomato",
-      "Swiggy",
-      "Amazon",
-      "Flipkart",
-      "Uber",
-      "Ola",
-      "Netflix",
-      "Spotify",
-      "Electricity Bill",
-      "Mobile Recharge",
-    ];
-
-    for (let i = 0; i < transactionCount; i++) {
-      const merchant =
-        mockMerchants[Math.floor(Math.random() * mockMerchants.length)];
-      const amount = Math.floor(Math.random() * 2000) + 50;
-      const date = new Date();
-      date.setDate(date.getDate() - Math.floor(Math.random() * 90));
-
-      transactions.push({
-        id: Math.random().toString(36).substr(2, 9),
-        date,
-        description: merchant,
-        amount,
-        type: "debit",
-        category: "Others",
-        source: source as any,
-        confidence: "Medium",
-        categorizedBy: "Rule",
-        merchant,
-      });
-    }
-
-    return transactions;
-  };
 
   const removeFile = useCallback((fileId: string) => {
     setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId));
