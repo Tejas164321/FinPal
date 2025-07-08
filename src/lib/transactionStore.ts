@@ -130,6 +130,14 @@ class TransactionStore {
     );
   }
 
+  // Public method to force clear sample data (for cleanup)
+  forceClearSampleData() {
+    if (this.hasSampleData()) {
+      this.clearSampleData();
+      this.notifySubscribers();
+    }
+  }
+
   // Subscribe to transaction updates
   subscribe(callback: (transactions: Transaction[]) => void) {
     this.subscribers.push(callback);
