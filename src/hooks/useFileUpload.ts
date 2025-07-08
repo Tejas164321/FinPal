@@ -39,7 +39,13 @@ export const useFileUpload = () => {
       const apiResult = await uploadFile(file);
 
       if (!apiResult.success) {
-        throw new Error(apiResult.error || "Processing failed");
+        const errorMessage = apiResult.error || "Processing failed";
+        console.error("❌ API call failed:", errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      if (!apiResult.data) {
+        throw new Error("No data received from server");
       }
 
       // Update to processing status
