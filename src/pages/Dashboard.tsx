@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import AppLayout from "@/components/layout/AppLayout";
+import { transactionStore } from "@/lib/transactionStore";
 
 // Mock data for demonstration
 const monthlyData = [
@@ -112,11 +113,25 @@ const recentTransactions = [
 const Dashboard = () => {
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState("This Month");
+  const [summary, setSummary] = useState(transactionStore.getSummary());
 
-  const totalIncome = 85000;
-  const totalExpenses = 65000;
+  // Update summary when transactions change
+  useEffect(() => {
+    const updateSummary = () => {
+      setSummary(transactionStore.getSummary());
+    };
+
+    const unsubscribe = transactionStore.subscribe(updateSummary);
+    updateSummary(); // Initial load
+
+    return unsubscribe;
+  }, []);
+
+  const totalIncome = summary.totalCredits || 85000; // Fallback for demo
+  const totalExpenses = summary.totalDebits || 65000;
   const totalSavings = totalIncome - totalExpenses;
-  const savingsPercentage = (totalSavings / totalIncome) * 100;
+  const savingsPercentage =
+    totalIncome > 0 ? (totalSavings / totalIncome) * 100 : 0;
 
   return (
     <AppLayout>
