@@ -89,17 +89,73 @@ function parseGPayFormat(row) {
 
 function parsePhonePeFormat(row) {
   // PhonePe CSV format
-  const date = parseDate(row["Date"] || row["Transaction Date"]);
-  const description = row["Transaction Details"] || row["Description"] || "";
-  const amountStr = row["Amount"] || row["Debit"] || row["Credit"] || "0";
-  const status = row["Status"] || "Success";
+  console.log("🔍 PhonePe Row Debug:", {
+    rawRow: row,
+    availableColumns: Object.keys(row),
+    dateFields: {
+      Date: row["Date"],
+      "Transaction Date": row["Transaction Date"],
+      date: row["date"],
+    },
+    descriptionFields: {
+      "Transaction Details": row["Transaction Details"],
+      Description: row["Description"],
+      description: row["description"],
+    },
+    amountFields: {
+      Amount: row["Amount"],
+      Debit: row["Debit"],
+      Credit: row["Credit"],
+      amount: row["amount"],
+    },
+    statusFields: {
+      Status: row["Status"],
+      status: row["status"],
+    },
+  });
 
-  if (!date || !description || status.toLowerCase() !== "success") return null;
+  const date = parseDate(row["Date"] || row["Transaction Date"] || row["date"]);
+  const description =
+    row["Transaction Details"] ||
+    row["Description"] ||
+    row["description"] ||
+    "";
+  const amountStr =
+    row["Amount"] || row["Debit"] || row["Credit"] || row["amount"] || "0";
+  const status = row["Status"] || row["status"] || "Success";
+
+  console.log("🔍 PhonePe Parsed Values:", {
+    date: date,
+    description: description,
+    amountStr: amountStr,
+    status: status,
+    statusCheck: status.toLowerCase() === "success",
+  });
+
+  if (!date) {
+    console.warn("⚠️ PhonePe row skipped: No valid date found");
+    return null;
+  }
+
+  if (!description) {
+    console.warn("⚠️ PhonePe row skipped: No description found");
+    return null;
+  }
+
+  if (status.toLowerCase() !== "success") {
+    console.warn("⚠️ PhonePe row skipped: Status not success:", status);
+    return null;
+  }
 
   const amount = parseAmount(amountStr);
+  if (amount === 0) {
+    console.warn("⚠️ PhonePe row skipped: Zero amount");
+    return null;
+  }
+
   const type = amount < 0 ? "debit" : "credit";
 
-  return {
+  const transaction = {
     id: generateTransactionId(),
     date: date.toISOString(),
     description: description.trim(),
@@ -109,6 +165,9 @@ function parsePhonePeFormat(row) {
     merchant: extractMerchant(description),
     rawData: row,
   };
+
+  console.log("✅ PhonePe transaction created:", transaction);
+  return transaction;
 }
 
 function parsePaytmFormat(row) {
