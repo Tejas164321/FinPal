@@ -306,30 +306,77 @@ function parseBankStatementPDF(lines) {
 }
 
 function parseGenericPDF(lines) {
-  // Simple generic PDF parsing
+  console.log(
+    "📝 Generic PDF parsing - attempting to find transaction patterns...",
+  );
   const transactions = [];
 
-  // This is a basic implementation
-  // In a real scenario, you'd need more sophisticated PDF parsing
-  console.log("📝 Generic PDF parsing - creating sample transactions");
+  // Try to find actual transaction data first
+  const dateRegex = /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/;
+  const amountRegex = /₹?\s*(\d+(?:,\d+)*(?:\.\d{1,2})?)/;
 
-  // Generate some sample transactions based on PDF content
-  const sampleCount = Math.min(10, Math.max(5, Math.floor(lines.length / 20)));
+  console.log(`📄 Scanning ${lines.length} lines for transaction patterns...`);
 
-  for (let i = 0; i < sampleCount; i++) {
-    const date = new Date();
-    date.setDate(date.getDate() - i * 3);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
 
-    transactions.push({
-      id: generateTransactionId(),
-      date: date.toISOString(),
-      description: `PDF Transaction ${i + 1}`,
-      amount: Math.floor(Math.random() * 1000) + 50,
-      type: "debit",
-      source: "Unknown",
-      merchant: "Unknown",
-      rawData: { generatedFromPDF: true },
-    });
+    // Look for lines with both date and amount
+    if (dateRegex.test(line) && amountRegex.test(line)) {
+      console.log(`🔍 Found potential transaction line: "${line}"`);
+
+      const dateMatch = line.match(dateRegex);
+      const amountMatches = line.match(/₹?\s*(\d+(?:,\d+)*(?:\.\d{1,2})?)/g);
+
+      if (dateMatch && amountMatches) {
+        const date = parseDate(dateMatch[1]);
+
+        // Find the largest amount (likely the transaction amount)
+        let maxAmount = 0;
+        for (const match of amountMatches) {
+          const cleanAmount = parseFloat(match.replace(/[₹,\s]/g, ""));
+          if (cleanAmount > maxAmount) {
+            maxAmount = cleanAmount;
+          }
+        }
+
+        if (date && maxAmount > 0) {
+          const description =
+            line
+              .replace(dateRegex, "")
+              .replace(/₹?\s*\d+(?:,\d+)*(?:\.\d{1,2})?/g, "")
+              .trim() || "PDF Transaction";
+
+          transactions.push({
+            id: generateTransactionId(),
+            date: date.toISOString(),
+            description: description.substring(0, 100),
+            amount: maxAmount,
+            type: "debit", // Default
+            source: "PDF",
+            merchant: extractMerchant(description),
+            rawData: { originalLine: line },
+          });
+
+          console.log(
+            `✅ Extracted transaction: ${description} - ₹${maxAmount}`,
+          );
+        }
+      }
+    }
+  }
+
+  console.log(
+    `✅ Generic PDF parsing complete: ${transactions.length} real transactions found`,
+  );
+
+  // Only create sample data if no real transactions were found
+  if (transactions.length === 0) {
+    console.log(
+      "⚠️ No real transactions found in PDF. This might be an unsupported format.",
+    );
+    console.log(
+      "💡 Consider converting to CSV or using a supported statement format.",
+    );
   }
 
   return transactions;
