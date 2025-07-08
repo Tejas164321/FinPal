@@ -70,7 +70,13 @@ export const useFileUpload = () => {
         ),
       );
 
+      // Save transactions to store for persistence across pages
+      transactionStore.addTransactions(result.transactions);
+
       console.log("✅ File processed successfully:", apiResult.data.fileName);
+      console.log(
+        `💾 Added ${result.transactions.length} transactions to store`,
+      );
     } catch (error) {
       console.error("❌ Upload error:", error);
       setUploadedFiles((prev) =>
