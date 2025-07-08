@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { uploadFile, checkHealth } from "@/lib/api";
 import { type Transaction, type ProcessingResult } from "@/lib/fileProcessing";
+import { transactionStore } from "@/lib/transactionStore";
 
 export interface UploadedFile {
   file: File;
