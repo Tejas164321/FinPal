@@ -54,6 +54,18 @@ const Transactions = () => {
   useEffect(() => {
     const loadTransactions = () => {
       const allTransactions = transactionStore.getAllTransactions();
+      console.log(
+        "📊 Debug: Total transactions in store:",
+        allTransactions.length,
+      );
+      console.log(
+        "📊 Debug: Sample data count:",
+        allTransactions.filter((t) => t.id.startsWith("sample_")).length,
+      );
+      console.log(
+        "📊 Debug: Real data count:",
+        allTransactions.filter((t) => !t.id.startsWith("sample_")).length,
+      );
       setTransactions(allTransactions);
     };
 
