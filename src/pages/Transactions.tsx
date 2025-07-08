@@ -175,6 +175,14 @@ const Transactions = () => {
 
   const totals = getTotalsByType();
 
+  // Check if there's sample data mixed with real data
+  const hasSampleData = transactions.some((t) => t.id.startsWith("sample_"));
+  const hasRealData = transactions.some((t) => !t.id.startsWith("sample_"));
+
+  const handleClearSampleData = () => {
+    transactionStore.forceClearSampleData();
+  };
+
   return (
     <AppLayout>
       <div className="max-w-7xl mx-auto">
