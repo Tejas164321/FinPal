@@ -36,6 +36,7 @@ import {
   Eye,
   FileText,
   ArrowUpDown,
+  AlertCircle,
 } from "lucide-react";
 
 interface Transaction {
