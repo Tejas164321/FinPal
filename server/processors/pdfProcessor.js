@@ -31,6 +31,12 @@ function parseTransactionsFromText(text, source) {
 
   // Different parsing strategies based on source
   switch (source) {
+    case "PhonePe":
+      return parsePhonePePDF(lines);
+    case "GPay":
+      return parseGPayPDF(lines);
+    case "Paytm":
+      return parsePaytmPDF(lines);
     case "Bank":
       return parseBankStatementPDF(lines);
     default:
