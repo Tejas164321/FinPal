@@ -194,6 +194,27 @@ const Transactions = () => {
           </p>
         </div>
 
+        {/* Alert for mixed sample and real data */}
+        {hasSampleData && hasRealData && (
+          <Alert className="glass border-yellow-500/50 mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <span>
+                You have sample data mixed with your real transactions. Clear
+                sample data to see only your uploaded files.
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearSampleData}
+                className="ml-4 border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10"
+              >
+                Clear Sample Data
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card className="glass-card">
