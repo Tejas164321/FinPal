@@ -6,6 +6,7 @@ async function processCSV(filePath, fileName) {
   return new Promise((resolve, reject) => {
     const transactions = [];
     const source = detectSource(fileName);
+    const errors = [];
 
     console.log(`📊 Processing CSV file: ${fileName} (Source: ${source})`);
 
@@ -20,13 +21,14 @@ async function processCSV(filePath, fileName) {
           }
         } catch (error) {
           console.warn("⚠️ Skipping invalid row:", error.message);
+          errors.push(`Row skipped: ${error.message}`);
         }
       })
       .on("end", () => {
         console.log(
           `✅ CSV processed: ${transactions.length} transactions found`,
         );
-        resolve({ transactions, source });
+        resolve({ transactions, source, errors });
       })
       .on("error", (error) => {
         console.error("❌ CSV processing error:", error);
@@ -90,8 +92,9 @@ function parsePhonePeFormat(row) {
   const date = parseDate(row["Date"] || row["Transaction Date"]);
   const description = row["Transaction Details"] || row["Description"] || "";
   const amountStr = row["Amount"] || row["Debit"] || row["Credit"] || "0";
+  const status = row["Status"] || "Success";
 
-  if (!date || !description) return null;
+  if (!date || !description || status.toLowerCase() !== "success") return null;
 
   const amount = parseAmount(amountStr);
   const type = amount < 0 ? "debit" : "credit";
@@ -113,8 +116,9 @@ function parsePaytmFormat(row) {
   const date = parseDate(row["Date"] || row["Transaction Date"]);
   const description = row["Activity"] || row["Description"] || "";
   const amountStr = row["Amount"] || "0";
+  const status = row["Status"] || "Success";
 
-  if (!date || !description) return null;
+  if (!date || !description || status.toLowerCase() !== "success") return null;
 
   const amount = parseAmount(amountStr);
   const type = amount < 0 ? "debit" : "credit";
@@ -152,6 +156,8 @@ function parseBankFormat(row) {
   const amount = credit > 0 ? credit : debit;
   const type = credit > 0 ? "credit" : "debit";
 
+  if (amount === 0) return null; // Skip zero amount transactions
+
   return {
     id: generateTransactionId(),
     date: date.toISOString(),
@@ -172,6 +178,7 @@ function parseGenericFormat(row) {
     "transaction_date",
     "Transaction Date",
     "posting_date",
+    "Date of Transaction",
   ];
   const possibleDescFields = [
     "description",
@@ -179,6 +186,8 @@ function parseGenericFormat(row) {
     "particulars",
     "details",
     "merchant",
+    "Transaction Details",
+    "Activity",
   ];
   const possibleAmountFields = ["amount", "Amount", "debit", "credit"];
 
@@ -210,7 +219,7 @@ function parseGenericFormat(row) {
     }
   }
 
-  if (!date || !description) return null;
+  if (!date || !description || amount === 0) return null;
 
   return {
     id: generateTransactionId(),
@@ -224,11 +233,14 @@ function parseGenericFormat(row) {
   };
 }
 
-// Helper functions
+// Enhanced date parsing function
 function parseDate(dateStr) {
   if (!dateStr) return null;
 
-  // Try different date formats
+  // Clean the date string
+  const cleaned = dateStr.toString().trim();
+
+  // Try different date formats common in Indian transactions
   const formats = [
     // DD/MM/YYYY
     /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
@@ -236,46 +248,108 @@ function parseDate(dateStr) {
     /^(\d{1,2})-(\d{1,2})-(\d{4})$/,
     // YYYY-MM-DD
     /^(\d{4})-(\d{1,2})-(\d{1,2})$/,
+    // DD.MM.YYYY
+    /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/,
+    // DD/MM/YY
+    /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/,
+    // DD-MM-YY
+    /^(\d{1,2})-(\d{1,2})-(\d{2})$/,
   ];
 
   for (const format of formats) {
-    const match = dateStr.match(format);
+    const match = cleaned.match(format);
     if (match) {
-      if (
-        format.source.includes("YYYY") &&
-        format.source.startsWith("^(\\d{4})")
-      ) {
+      let day, month, year;
+
+      if (format.source.startsWith("^(\\d{4})")) {
         // YYYY-MM-DD format
-        return new Date(match[1], match[2] - 1, match[3]);
+        year = parseInt(match[1]);
+        month = parseInt(match[2]) - 1; // JS months are 0-indexed
+        day = parseInt(match[3]);
       } else {
         // DD/MM/YYYY or DD-MM-YYYY format
-        return new Date(match[3], match[2] - 1, match[1]);
+        day = parseInt(match[1]);
+        month = parseInt(match[2]) - 1; // JS months are 0-indexed
+        year = parseInt(match[3]);
+
+        // Handle 2-digit years
+        if (year < 100) {
+          year = year > 50 ? 1900 + year : 2000 + year;
+        }
+      }
+
+      // Validate date components
+      if (
+        month >= 0 &&
+        month <= 11 &&
+        day >= 1 &&
+        day <= 31 &&
+        year >= 1970 &&
+        year <= new Date().getFullYear() + 1
+      ) {
+        const parsedDate = new Date(year, month, day);
+        if (
+          parsedDate.getFullYear() === year &&
+          parsedDate.getMonth() === month &&
+          parsedDate.getDate() === day
+        ) {
+          return parsedDate;
+        }
       }
     }
   }
 
   // Try native Date parsing as fallback
-  const parsed = new Date(dateStr);
-  return isNaN(parsed.getTime()) ? null : parsed;
+  const parsed = new Date(cleaned);
+  if (!isNaN(parsed.getTime()) && parsed.getFullYear() >= 1970) {
+    return parsed;
+  }
+
+  console.warn(`Could not parse date: ${dateStr}`);
+  return null;
 }
 
 function parseAmount(amountStr) {
   if (!amountStr) return 0;
 
-  // Remove currency symbols and commas
+  // Remove currency symbols, spaces, and other non-numeric characters
   const cleaned = amountStr
     .toString()
     .replace(/[₹$,\s]/g, "")
-    .replace(/[()]/g, "-"); // Handle negative amounts in parentheses
+    .replace(/[()]/g, "-") // Handle negative amounts in parentheses
+    .replace(/,/g, ""); // Remove thousand separators
 
   const parsed = parseFloat(cleaned);
   return isNaN(parsed) ? 0 : parsed;
 }
 
 function extractMerchant(description) {
-  // Simple merchant extraction - take first meaningful word
-  const words = description.split(/[\s\-_]+/);
-  return words.find((word) => word.length > 2) || "Unknown";
+  // Enhanced merchant extraction
+  const desc = description.toLowerCase().trim();
+
+  // Common UPI patterns
+  const upiPatterns = [
+    /to\s+([^-\s]+)/i, // "TO MERCHANT"
+    /from\s+([^-\s]+)/i, // "FROM MERCHANT"
+    /paid\s+to\s+([^-\s]+)/i, // "PAID TO MERCHANT"
+    /received\s+from\s+([^-\s]+)/i, // "RECEIVED FROM MERCHANT"
+  ];
+
+  for (const pattern of upiPatterns) {
+    const match = description.match(pattern);
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+  }
+
+  // Fallback to first meaningful word
+  const words = description.split(/[\s\-_@]+/);
+  const meaningfulWord = words.find(
+    (word) =>
+      word.length > 2 && !/^(the|and|for|to|from|at|in|on|with)$/i.test(word),
+  );
+
+  return meaningfulWord || "Unknown";
 }
 
 function generateTransactionId() {
