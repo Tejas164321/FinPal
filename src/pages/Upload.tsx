@@ -237,9 +237,13 @@ const Upload = () => {
                           </span>
                         </div>
                         <div className="text-sm text-foreground/70">
-                          {uploadedFile.result.summary.dateRange.from.toLocaleDateString()}{" "}
+                          {new Date(
+                            uploadedFile.result.summary.dateRange.from,
+                          ).toLocaleDateString()}{" "}
                           -{" "}
-                          {uploadedFile.result.summary.dateRange.to.toLocaleDateString()}
+                          {new Date(
+                            uploadedFile.result.summary.dateRange.to,
+                          ).toLocaleDateString()}
                         </div>
                         <div className="flex space-x-2">
                           <Button
