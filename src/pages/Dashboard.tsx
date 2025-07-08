@@ -346,6 +346,7 @@ const Dashboard = () => {
                     outerRadius={120}
                     paddingAngle={5}
                     dataKey="value"
+                    stroke="none"
                   >
                     {categoryData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -356,9 +357,10 @@ const Dashboard = () => {
                       backgroundColor: "rgba(17, 24, 39, 0.8)",
                       border: "1px solid rgba(139, 92, 246, 0.3)",
                       borderRadius: "8px",
+                      color: "#ffffff",
                     }}
                     formatter={(value) => [
-                      `₹${value.toLocaleString()}`,
+                      `₹${Number(value).toLocaleString()}`,
                       "Amount",
                     ]}
                   />
