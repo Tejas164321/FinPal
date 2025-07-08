@@ -80,19 +80,44 @@ export async function uploadFile(
       `📡 Response status: ${response.status} ${response.statusText}`,
     );
 
+    let data;
+    const contentType = response.headers.get("content-type");
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("❌ Upload failed:", errorText);
+      let errorMessage = `Upload failed: ${response.status} ${response.statusText}`;
+
+      try {
+        // Try to get error details from response
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } else {
+          const errorText = await response.text();
+          errorMessage = errorText || errorMessage;
+        }
+      } catch (parseError) {
+        console.warn("Could not parse error response:", parseError);
+      }
+
+      console.error("❌ Upload failed:", errorMessage);
       return {
         success: false,
-        error: `Upload failed: ${response.status} ${response.statusText}`,
+        error: errorMessage,
       };
     }
 
-    const data = await response.json();
-    console.log("✅ Upload successful:", data.success);
-
-    return data;
+    // Response is OK, parse as JSON
+    try {
+      data = await response.json();
+      console.log("✅ Upload successful:", data.success);
+      return data;
+    } catch (parseError) {
+      console.error("❌ Failed to parse success response:", parseError);
+      return {
+        success: false,
+        error: "Failed to parse server response",
+      };
+    }
   } catch (error) {
     console.error("❌ Upload error:", error);
     return {
