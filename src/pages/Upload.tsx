@@ -31,6 +31,22 @@ const Upload = () => {
     getAllTransactions,
   } = useFileUpload();
 
+  // Helper function to safely format dates
+  const formatDate = (dateString: string | Date) => {
+    try {
+      const date =
+        typeof dateString === "string" ? new Date(dateString) : dateString;
+      return date.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    } catch (error) {
+      console.warn("Invalid date:", dateString);
+      return "Invalid Date";
+    }
+  };
+
   const onDrop = useCallback((acceptedFiles: File[]) => {
     acceptedFiles.forEach((file) => {
       processFile(file);
@@ -237,13 +253,11 @@ const Upload = () => {
                           </span>
                         </div>
                         <div className="text-sm text-foreground/70">
-                          {new Date(
+                          {formatDate(
                             uploadedFile.result.summary.dateRange.from,
-                          ).toLocaleDateString()}{" "}
+                          )}{" "}
                           -{" "}
-                          {new Date(
-                            uploadedFile.result.summary.dateRange.to,
-                          ).toLocaleDateString()}
+                          {formatDate(uploadedFile.result.summary.dateRange.to)}
                         </div>
                         <div className="flex space-x-2">
                           <Button
