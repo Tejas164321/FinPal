@@ -44,6 +44,197 @@ function parseTransactionsFromText(text, source) {
   }
 }
 
+function parsePhonePePDF(lines) {
+  console.log("📱 Parsing PhonePe PDF statement...");
+  const transactions = [];
+
+  // PhonePe PDF patterns to look for
+  const transactionStartMarkers = [
+    /transaction\s*details/i,
+    /payment\s*to/i,
+    /received\s*from/i,
+    /money\s*sent/i,
+    /money\s*received/i,
+    /wallet\s*to\s*wallet/i,
+    /upi\s*payment/i,
+  ];
+
+  // Date patterns (DD/MM/YYYY, DD-MM-YYYY, etc.)
+  const dateRegex = /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/;
+
+  // Amount patterns (₹123.45, 123.45, etc.)
+  const amountRegex = /₹?\s*(\d+(?:,\d+)*(?:\.\d{1,2})?)/;
+
+  console.log(`📄 Processing ${lines.length} lines from PhonePe PDF...`);
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    // Skip empty lines
+    if (!line) continue;
+
+    // Look for transaction markers
+    const isTransactionLine = transactionStartMarkers.some((pattern) =>
+      pattern.test(line),
+    );
+
+    if (isTransactionLine || dateRegex.test(line)) {
+      console.log(`🔍 Found potential transaction at line ${i}: "${line}"`);
+
+      // Try to extract transaction data from this line and surrounding context
+      const transaction = extractPhonePeTransaction(lines, i);
+
+      if (transaction) {
+        transactions.push(transaction);
+        console.log(`✅ Extracted transaction: ${transaction.description}`);
+      }
+    }
+  }
+
+  console.log(
+    `✅ PhonePe PDF parsing complete: ${transactions.length} transactions found`,
+  );
+  return transactions;
+}
+
+function extractPhonePeTransaction(lines, startIndex) {
+  const contextLines = [];
+
+  // Gather context - current line and next few lines
+  for (let i = 0; i < 5 && startIndex + i < lines.length; i++) {
+    const line = lines[startIndex + i].trim();
+    if (line) {
+      contextLines.push(line);
+    }
+  }
+
+  const fullContext = contextLines.join(" ");
+  console.log(`🔍 Transaction context: "${fullContext}"`);
+
+  // Extract date
+  const dateMatch = fullContext.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/);
+  if (!dateMatch) {
+    console.log("⚠️ No date found in context");
+    return null;
+  }
+
+  const date = parseDate(dateMatch[1]);
+  if (!date) {
+    console.log("⚠️ Could not parse date:", dateMatch[1]);
+    return null;
+  }
+
+  // Extract amount
+  const amountMatches = fullContext.match(/₹?\s*(\d+(?:,\d+)*(?:\.\d{1,2})?)/g);
+  if (!amountMatches || amountMatches.length === 0) {
+    console.log("⚠️ No amount found in context");
+    return null;
+  }
+
+  // Take the largest amount found (likely the transaction amount)
+  let maxAmount = 0;
+  for (const match of amountMatches) {
+    const cleanAmount = parseFloat(match.replace(/[₹,\s]/g, ""));
+    if (cleanAmount > maxAmount) {
+      maxAmount = cleanAmount;
+    }
+  }
+
+  if (maxAmount === 0) {
+    console.log("⚠️ No valid amount found");
+    return null;
+  }
+
+  // Determine transaction type
+  let type = "debit"; // Default
+  const creditKeywords = ["received", "credit", "refund", "cashback"];
+  const debitKeywords = ["sent", "paid", "payment", "debit", "transfer"];
+
+  const lowerContext = fullContext.toLowerCase();
+  if (creditKeywords.some((keyword) => lowerContext.includes(keyword))) {
+    type = "credit";
+  } else if (debitKeywords.some((keyword) => lowerContext.includes(keyword))) {
+    type = "debit";
+  }
+
+  // Extract description - clean up the context
+  let description = fullContext
+    .replace(/₹?\s*\d+(?:,\d+)*(?:\.\d{1,2})?/g, "") // Remove amounts
+    .replace(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/g, "") // Remove dates
+    .replace(/\s+/g, " ") // Normalize spaces
+    .trim();
+
+  // If description is too short, use a more generic one
+  if (description.length < 10) {
+    description = type === "credit" ? "Money Received" : "Payment Made";
+  }
+
+  // Limit description length
+  if (description.length > 100) {
+    description = description.substring(0, 100) + "...";
+  }
+
+  return {
+    id: generateTransactionId(),
+    date: date.toISOString(),
+    description: description,
+    amount: maxAmount,
+    type: type,
+    source: "PhonePe",
+    merchant: extractMerchant(description),
+    rawData: { pdfContext: fullContext },
+  };
+}
+
+function parseGPayPDF(lines) {
+  console.log("📱 Parsing Google Pay PDF statement...");
+  // Similar implementation for GPay PDFs
+  return parseGenericUPIPDF(lines, "GPay");
+}
+
+function parsePaytmPDF(lines) {
+  console.log("📱 Parsing Paytm PDF statement...");
+  // Similar implementation for Paytm PDFs
+  return parseGenericUPIPDF(lines, "Paytm");
+}
+
+function parseGenericUPIPDF(lines, source) {
+  const transactions = [];
+  const dateRegex = /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/;
+  const amountRegex = /₹?\s*(\d+(?:,\d+)*(?:\.\d{1,2})?)/;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    if (dateRegex.test(line) && amountRegex.test(line)) {
+      const dateMatch = line.match(dateRegex);
+      const amountMatch = line.match(amountRegex);
+
+      if (dateMatch && amountMatch) {
+        const date = parseDate(dateMatch[1]);
+        const amount = parseFloat(amountMatch[1].replace(/[₹,\s]/g, ""));
+
+        if (date && amount > 0) {
+          transactions.push({
+            id: generateTransactionId(),
+            date: date.toISOString(),
+            description:
+              line.replace(dateRegex, "").replace(amountRegex, "").trim() ||
+              `${source} Transaction`,
+            amount: amount,
+            type: "debit", // Default, could be improved with better parsing
+            source: source,
+            merchant: "Unknown",
+            rawData: { originalLine: line },
+          });
+        }
+      }
+    }
+  }
+
+  return transactions;
+}
+
 function parseBankStatementPDF(lines) {
   const transactions = [];
   const dateRegex = /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/;
