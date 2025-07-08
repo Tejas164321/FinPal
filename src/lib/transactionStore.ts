@@ -278,8 +278,10 @@ class TransactionStore {
 // Create singleton instance
 export const transactionStore = new TransactionStore();
 
-// Load sample data for demo purposes
-transactionStore.loadSampleData();
+// Load sample data for demo purposes only if no real data exists
+if (transactionStore.getAllTransactions().length === 0) {
+  transactionStore.loadSampleData();
+}
 
 // Export types
 export type { Transaction };
