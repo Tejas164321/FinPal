@@ -273,14 +273,30 @@ const Dashboard = () => {
               <ResponsiveContainer width="100%" height={300}>
                 <AreaChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="month" stroke="#9CA3AF" />
-                  <YAxis stroke="#9CA3AF" />
+                  <XAxis
+                    dataKey="month"
+                    stroke="#9CA3AF"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="#9CA3AF"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
+                  />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "rgba(17, 24, 39, 0.8)",
                       border: "1px solid rgba(139, 92, 246, 0.3)",
                       borderRadius: "8px",
                     }}
+                    formatter={(value, name) => [
+                      `₹${Number(value).toLocaleString()}`,
+                      name,
+                    ]}
                   />
                   <Area
                     type="monotone"
