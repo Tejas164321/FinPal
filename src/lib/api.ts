@@ -26,12 +26,35 @@ export interface UploadResponse {
 // Health check
 export async function checkHealth(): Promise<boolean> {
   try {
+    console.log(`🏥 Checking API health at: ${API_BASE_URL}/health`);
     const response = await fetch(`${API_BASE_URL}/health`);
     const data = await response.json();
-    return data.status === "OK";
+    const isHealthy = data.status === "OK";
+    console.log(`💚 API Health: ${isHealthy ? "OK" : "Failed"}`, data);
+    return isHealthy;
   } catch (error) {
-    console.error("Health check failed:", error);
+    console.error("❌ Health check failed:", error);
     return false;
+  }
+}
+
+// Test API connectivity
+export async function testConnection(): Promise<{
+  success: boolean;
+  message: string;
+}> {
+  try {
+    const isHealthy = await checkHealth();
+    if (isHealthy) {
+      return { success: true, message: "API connection successful" };
+    } else {
+      return { success: false, message: "API is not responding correctly" };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Connection failed",
+    };
   }
 }
 
@@ -40,26 +63,42 @@ export async function uploadFile(
   file: File,
 ): Promise<ApiResponse<UploadResponse>> {
   try {
+    console.log(`🔄 Uploading file: ${file.name} (${file.size} bytes)`);
+
     const formData = new FormData();
     formData.append("file", file);
 
     const response = await fetch(`${API_BASE_URL}/upload`, {
       method: "POST",
       body: formData,
+      headers: {
+        // Don't set Content-Type for FormData, let browser set it with boundary
+      },
     });
 
-    const data = await response.json();
+    console.log(
+      `📡 Response status: ${response.status} ${response.statusText}`,
+    );
 
     if (!response.ok) {
-      return { success: false, error: data.error || "Upload failed" };
+      const errorText = await response.text();
+      console.error("❌ Upload failed:", errorText);
+      return {
+        success: false,
+        error: `Upload failed: ${response.status} ${response.statusText}`,
+      };
     }
+
+    const data = await response.json();
+    console.log("✅ Upload successful:", data.success);
 
     return data;
   } catch (error) {
-    console.error("Upload error:", error);
+    console.error("❌ Upload error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Network error",
+      error:
+        error instanceof Error ? error.message : "Network connection error",
     };
   }
 }
