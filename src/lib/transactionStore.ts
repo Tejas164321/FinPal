@@ -118,6 +118,18 @@ class TransactionStore {
     this.notifySubscribers();
   }
 
+  // Check if current transactions are sample data
+  private hasSampleData(): boolean {
+    return this.transactions.some((t) => t.id.startsWith("sample_"));
+  }
+
+  // Clear only sample data
+  private clearSampleData() {
+    this.transactions = this.transactions.filter(
+      (t) => !t.id.startsWith("sample_"),
+    );
+  }
+
   // Subscribe to transaction updates
   subscribe(callback: (transactions: Transaction[]) => void) {
     this.subscribers.push(callback);
