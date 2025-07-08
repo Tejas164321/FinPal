@@ -10,24 +10,39 @@ async function processCSV(filePath, fileName) {
 
     console.log(`📊 Processing CSV file: ${fileName} (Source: ${source})`);
 
+    let rowCount = 0;
+    let processedCount = 0;
+    let skippedCount = 0;
+
     fs.createReadStream(filePath)
       .pipe(csv())
       .on("data", (row) => {
+        rowCount++;
+        console.log(`📊 Processing row ${rowCount}...`);
+
         try {
           // Parse transaction based on detected source
           const transaction = parseTransaction(row, source);
           if (transaction) {
             transactions.push(transaction);
+            processedCount++;
+            console.log(`✅ Row ${rowCount}: Transaction added`);
+          } else {
+            skippedCount++;
+            console.log(`⚠️ Row ${rowCount}: Skipped (no valid transaction)`);
           }
         } catch (error) {
-          console.warn("⚠️ Skipping invalid row:", error.message);
-          errors.push(`Row skipped: ${error.message}`);
+          skippedCount++;
+          console.warn(`❌ Row ${rowCount}: Error -`, error.message);
+          errors.push(`Row ${rowCount} skipped: ${error.message}`);
         }
       })
       .on("end", () => {
-        console.log(
-          `✅ CSV processed: ${transactions.length} transactions found`,
-        );
+        console.log(`✅ CSV processing complete:
+          📊 Total rows processed: ${rowCount}
+          ✅ Valid transactions: ${processedCount}
+          ⚠️ Skipped rows: ${skippedCount}
+          💾 Final transaction count: ${transactions.length}`);
         resolve({ transactions, source, errors });
       })
       .on("error", (error) => {
