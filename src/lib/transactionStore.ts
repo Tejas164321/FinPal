@@ -7,6 +7,10 @@ class TransactionStore {
 
   // Add transactions from uploaded files
   addTransactions(newTransactions: Transaction[]) {
+    // Clear sample data when adding real uploaded data
+    if (newTransactions.length > 0 && this.hasSampleData()) {
+      this.clearSampleData();
+    }
     this.transactions = [...this.transactions, ...newTransactions];
     this.notifySubscribers();
   }
