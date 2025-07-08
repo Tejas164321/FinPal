@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import AppLayout from "@/components/layout/AppLayout";
+import { transactionStore, type Transaction } from "@/lib/transactionStore";
 import { Link } from "react-router-dom";
 import {
   Upload,
@@ -115,15 +116,31 @@ const mockTransactions: Transaction[] = [
 ];
 
 const Transactions = () => {
-  const [transactions, setTransactions] =
-    useState<Transaction[]>(mockTransactions);
-  const [filteredTransactions, setFilteredTransactions] =
-    useState<Transaction[]>(mockTransactions);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [filteredTransactions, setFilteredTransactions] = useState<
+    Transaction[]
+  >([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  // Load transactions from store on component mount
+  useEffect(() => {
+    const loadTransactions = () => {
+      const allTransactions = transactionStore.getAllTransactions();
+      setTransactions(allTransactions);
+    };
+
+    // Load initial data
+    loadTransactions();
+
+    // Subscribe to transaction updates
+    const unsubscribe = transactionStore.subscribe(loadTransactions);
+
+    return unsubscribe;
+  }, []);
 
   // Get unique categories from transactions
   const categories = Array.from(new Set(transactions.map((t) => t.category)));
