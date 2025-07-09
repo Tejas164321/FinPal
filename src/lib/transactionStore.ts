@@ -7,11 +7,21 @@ class TransactionStore {
 
   // Add transactions from uploaded files
   addTransactions(newTransactions: Transaction[]) {
+    console.log(
+      `🔧 Adding ${newTransactions.length} new transactions to store`,
+    );
+    console.log(`🔧 Current store size: ${this.transactions.length}`);
+    console.log(`🔧 Has sample data: ${this.hasSampleData()}`);
+    console.log(`🔧 Sample transaction from new data:`, newTransactions[0]);
+
     // Clear sample data when adding real uploaded data
     if (newTransactions.length > 0 && this.hasSampleData()) {
+      console.log(`🔧 Clearing sample data before adding real transactions`);
       this.clearSampleData();
     }
+
     this.transactions = [...this.transactions, ...newTransactions];
+    console.log(`🔧 Store size after adding: ${this.transactions.length}`);
     this.notifySubscribers();
   }
 
