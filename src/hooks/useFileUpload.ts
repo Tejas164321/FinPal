@@ -55,6 +55,13 @@ export const useFileUpload = () => {
         ),
       );
 
+      console.log("🔧 Backend API response received:", apiResult);
+      console.log(
+        "🔧 Transaction data received:",
+        apiResult.data?.transactions?.length || 0,
+        "transactions",
+      );
+
       // Convert backend response to our frontend format
       const result: ProcessingResult = {
         transactions: apiResult.data.transactions,
@@ -62,6 +69,9 @@ export const useFileUpload = () => {
         source: apiResult.data.source as any,
         errors: [],
       };
+
+      console.log("🔧 Processed result:", result);
+      console.log("🔧 Sample transaction from result:", result.transactions[0]);
 
       // Update to completed status
       setUploadedFiles((prev) =>
@@ -77,8 +87,16 @@ export const useFileUpload = () => {
         ),
       );
 
+      console.log(
+        `🔧 Before adding to store - current store size: ${transactionStore.getAllTransactions().length}`,
+      );
+
       // Save transactions to store for persistence across pages
       transactionStore.addTransactions(result.transactions);
+
+      console.log(
+        `🔧 After adding to store - new store size: ${transactionStore.getAllTransactions().length}`,
+      );
 
       console.log("✅ File processed successfully:", apiResult.data.fileName);
       console.log(
