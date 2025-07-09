@@ -13,6 +13,7 @@ const xlsx = require("xlsx");
 class UniversalTransactionProcessor {
   constructor() {
     this.strategies = [
+      new PhonePeSpecificStrategy(),
       new TableBasedStrategy(),
       new PatternBasedStrategy(),
       new AIHeuristicStrategy(),
