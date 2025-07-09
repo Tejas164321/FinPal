@@ -4,7 +4,7 @@ const { detectSource } = require("./sourceDetector");
 
 async function processPDF(filePath, fileName) {
   try {
-    console.log(`📄 Processing PDF file: ${fileName}`);
+    console.log(`��� Processing PDF file: ${fileName}`);
 
     const dataBuffer = fs.readFileSync(filePath);
     const pdfData = await pdfParse(dataBuffer);
@@ -35,7 +35,7 @@ async function processPDF(filePath, fileName) {
 
     return { transactions, source };
   } catch (error) {
-    console.error("��� PDF processing error:", error);
+    console.error("❌ PDF processing error:", error);
     throw new Error("Failed to process PDF file: " + error.message);
   }
 }
@@ -114,6 +114,13 @@ function parsePhonePePDF(lines, fullText) {
 
 function parsePhonePeStatementFormat(lines, fullText) {
   console.log("🔍 Using specialized PhonePe statement format parser");
+  console.log(`📝 DEBUG: Full text length: ${fullText.length}`);
+  console.log(`📝 DEBUG: Total lines: ${lines.length}`);
+  console.log(`📝 DEBUG: First 50 lines:`);
+  lines.slice(0, 50).forEach((line, i) => {
+    console.log(`Line ${i + 1}: "${line}"`);
+  });
+
   const transactions = [];
 
   // This parser is designed for the specific PhonePe statement format:
