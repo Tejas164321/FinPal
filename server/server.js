@@ -88,33 +88,24 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
 
     console.log("🔍 Processing file type:", fileExtension);
 
-    let transactions = [];
-    let source = "Unknown";
+    console.log("🚀 Using Universal Transaction Processor...");
 
-    // Process file based on type
-    switch (fileExtension) {
-      case ".csv":
-        const csvResult = await processCSV(filePath, req.file.originalname);
-        transactions = csvResult.transactions;
-        source = csvResult.source;
-        break;
+    // Create universal processor instance
+    const processor = new UniversalTransactionProcessor();
 
-      case ".pdf":
-        const pdfResult = await processPDF(filePath, req.file.originalname);
-        transactions = pdfResult.transactions;
-        source = pdfResult.source;
-        break;
+    // Process file with universal system
+    const result = await processor.processFile(filePath, req.file.originalname);
 
-      case ".xls":
-      case ".xlsx":
-        const excelResult = await processExcel(filePath, req.file.originalname);
-        transactions = excelResult.transactions;
-        source = excelResult.source;
-        break;
+    let transactions = result.transactions;
+    const source = result.source;
+    const strategy = result.strategy;
+    const confidence = result.confidence;
 
-      default:
-        throw new Error("Unsupported file type");
-    }
+    console.log(`📊 Universal Processing Results:`);
+    console.log(`   - Transactions found: ${transactions.length}`);
+    console.log(`   - Source detected: ${source}`);
+    console.log(`   - Strategy used: ${strategy}`);
+    console.log(`   - Confidence: ${confidence}`);
 
     console.log("🔄 Categorizing transactions...");
 
