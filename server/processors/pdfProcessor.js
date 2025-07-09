@@ -59,10 +59,26 @@ function parseTransactionsFromText(text, source) {
 }
 
 function parsePhonePePDF(lines, fullText) {
-  console.log("📱 Enhanced PhonePe PDF Parser Starting...");
+  console.log("📱 Specialized PhonePe Statement Parser Starting...");
   console.log(`📄 Total lines to process: ${lines.length}`);
 
   const transactions = [];
+
+  // Check if this is the specific PhonePe statement format
+  const isPhonePeStatement =
+    /Transaction Statement for \d+/.test(fullText) ||
+    /Paid to|Received from/.test(fullText) ||
+    /Transaction ID T\d+/.test(fullText);
+
+  console.log(`🔍 Is PhonePe Statement Format: ${isPhonePeStatement}`);
+
+  if (isPhonePeStatement) {
+    console.log("✅ Using specialized PhonePe statement parser");
+    return parsePhonePeStatementFormat(lines, fullText);
+  }
+
+  // Fallback to generic parsing
+  console.log("⚠️ Using generic PhonePe parsing");
 
   // Comprehensive PDF analysis
   console.log("🔍 === PDF CONTENT ANALYSIS ===");
@@ -89,13 +105,6 @@ function parsePhonePePDF(lines, fullText) {
     .forEach((line, i) => {
       console.log(`Line ${i + 1}: "${line}"`);
     });
-
-  // Log any lines with numbers
-  const numberLines = lines.filter((l) => /\d{3,}/.test(l)).slice(0, 10);
-  console.log(`🔍 Lines with numbers (first 10):`);
-  numberLines.forEach((line, i) => {
-    console.log(`Number line ${i + 1}: "${line}"`);
-  });
 
   console.log("🔍 === END ANALYSIS ===");
 
