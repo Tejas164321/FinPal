@@ -739,12 +739,32 @@ class FallbackStrategy {
   }
 
   extractDateFromContext(context) {
-    const dateMatch =
-      context.match(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/) ||
-      context.match(
-        /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}/i,
-      );
-    return dateMatch ? dateMatch[0] : null;
+    // Try multiple date formats
+    const datePatterns = [
+      // PhonePe format: "Jun 24, 2025 03:13 pm"
+      /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}\s+\d{1,2}:\d{2}\s+(am|pm)/i,
+      // Standard month format: "Jun 24, 2025"
+      /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}/i,
+      // Numeric format: "24/06/2025" or "24-06-2025"
+      /\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/,
+      // ISO format: "2025-06-24"
+      /\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/,
+    ];
+
+    for (const pattern of datePatterns) {
+      const match = context.match(pattern);
+      if (match) {
+        console.log(
+          `📅 Found date: "${match[0]}" in context: "${context.substring(0, 100)}..."`,
+        );
+        return match[0];
+      }
+    }
+
+    console.log(
+      `⚠️ No date found in context: "${context.substring(0, 100)}..."`,
+    );
+    return null;
   }
 
   extractDescriptionFromContext(context) {
