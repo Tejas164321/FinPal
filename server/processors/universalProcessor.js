@@ -117,8 +117,36 @@ class PhonePeSpecificStrategy {
       .replace(/UTR No\. [0-9]+/gi, "")
       .trim();
 
+    // Properly extract and format the date
+    const fullDateMatch = match[0].match(
+      /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2}),\s+(\d{4})/i,
+    );
+    let formattedDate = "";
+
+    if (fullDateMatch) {
+      const [, monthName, day, year] = fullDateMatch;
+      const monthNum = {
+        jan: "01",
+        feb: "02",
+        mar: "03",
+        apr: "04",
+        may: "05",
+        jun: "06",
+        jul: "07",
+        aug: "08",
+        sep: "09",
+        oct: "10",
+        nov: "11",
+        dec: "12",
+      }[monthName.toLowerCase()];
+
+      // Create ISO date string: YYYY-MM-DD
+      formattedDate = `${year}-${monthNum}-${day.padStart(2, "0")}`;
+      console.log(`📅 Parsed date: ${fullDateMatch[0]} → ${formattedDate}`);
+    }
+
     return {
-      date: match[0].match(/^[A-Za-z]+ \d{1,2}, \d{4}/)[0], // Extract just the date part
+      date: formattedDate || new Date().toISOString().split("T")[0], // Fallback to today if parsing fails
       description: cleanDescription,
       merchant: merchant || "Unknown",
       amount: amount,
