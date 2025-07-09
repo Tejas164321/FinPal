@@ -35,7 +35,7 @@ async function processPDF(filePath, fileName) {
 
     return { transactions, source };
   } catch (error) {
-    console.error("❌ PDF processing error:", error);
+    console.error("��� PDF processing error:", error);
     throw new Error("Failed to process PDF file: " + error.message);
   }
 }
@@ -107,6 +107,240 @@ function parsePhonePePDF(lines, fullText) {
     });
 
   console.log("🔍 === END ANALYSIS ===");
+
+  // Call the fallback generic parsing strategies
+  return parseGenericPhonePeStrategies(lines, fullText);
+}
+
+function parsePhonePeStatementFormat(lines, fullText) {
+  console.log("🔍 Using specialized PhonePe statement format parser");
+  const transactions = [];
+
+  // This parser is designed for the specific PhonePe statement format:
+  // Date: "Jun 24, 2025"
+  // Time: "03:13 pm"
+  // Details: "Paid to RAHIM KUTUBUDDIN PINJARI" or "Received from shantanu kate"
+  // Type: "DEBIT ₹20,000" or "CREDIT ₹3,500"
+
+  let currentDate = null;
+  let currentTime = null;
+  let currentDetails = null;
+  let currentType = null;
+  let currentAmount = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    // Skip empty lines
+    if (!line) continue;
+
+    // Pattern 1: Date line (e.g., "Jun 24, 2025")
+    const dateMatch = line.match(
+      /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2}),\s+(\d{4})$/,
+    );
+    if (dateMatch) {
+      currentDate = line;
+      continue;
+    }
+
+    // Pattern 2: Time line (e.g., "03:13 pm")
+    const timeMatch = line.match(/^(\d{1,2}):(\d{2})\s+(am|pm)$/);
+    if (timeMatch) {
+      currentTime = line;
+      continue;
+    }
+
+    // Pattern 3: Transaction details (e.g., "Paid to RAHIM KUTUBUDDIN PINJARI" or "Received from shantanu kate")
+    const detailsMatch = line.match(
+      /^(Paid to|Received from|Electricity bill paid)\s+(.+)$/,
+    );
+    if (detailsMatch) {
+      currentDetails = line;
+      continue;
+    }
+
+    // Pattern 4: Type and Amount (e.g., "DEBIT ₹20,000" or "CREDIT ₹3,500")
+    const typeAmountMatch = line.match(
+      /^(DEBIT|CREDIT)\s+₹([0-9,]+(?:\.\d{1,2})?)$/,
+    );
+    if (typeAmountMatch) {
+      currentType = typeAmountMatch[1];
+      currentAmount = typeAmountMatch[2];
+
+      // We have all components, create transaction
+      if (
+        currentDate &&
+        currentTime &&
+        currentDetails &&
+        currentType &&
+        currentAmount
+      ) {
+        const transaction = createPhonePeTransaction(
+          currentDate,
+          currentTime,
+          currentDetails,
+          currentType,
+          currentAmount,
+        );
+
+        if (transaction) {
+          transactions.push(transaction);
+          console.log(
+            `✅ Parsed: ${transaction.description} - ₹${transaction.amount} on ${transaction.date.split("T")[0]}`,
+          );
+        }
+
+        // Reset for next transaction
+        currentDate = null;
+        currentTime = null;
+        currentDetails = null;
+        currentType = null;
+        currentAmount = null;
+      }
+      continue;
+    }
+  }
+
+  console.log(
+    `🎉 PhonePe statement parsing complete: ${transactions.length} transactions extracted`,
+  );
+  return transactions;
+}
+
+function createPhonePeTransaction(
+  dateStr,
+  timeStr,
+  detailsStr,
+  typeStr,
+  amountStr,
+) {
+  try {
+    // Parse date: "Jun 24, 2025" -> Date object
+    const date = parsePhonePeStatementDate(dateStr, timeStr);
+    if (!date) {
+      console.warn(`Could not parse date: ${dateStr} ${timeStr}`);
+      return null;
+    }
+
+    // Parse amount: "20,000" -> 20000
+    const amount = parseFloat(amountStr.replace(/,/g, ""));
+    if (isNaN(amount) || amount <= 0) {
+      console.warn(`Invalid amount: ${amountStr}`);
+      return null;
+    }
+
+    // Extract merchant/person from details
+    let merchant = "Unknown";
+    let description = detailsStr;
+
+    if (detailsStr.startsWith("Paid to ")) {
+      merchant = detailsStr.substring(8).trim();
+      description = `Payment to ${merchant}`;
+    } else if (detailsStr.startsWith("Received from ")) {
+      merchant = detailsStr.substring(14).trim();
+      description = `Received from ${merchant}`;
+    } else if (detailsStr.startsWith("Electricity bill paid ")) {
+      merchant = "Electricity Board";
+      description = detailsStr;
+    }
+
+    // Clean up merchant name
+    if (merchant.length > 50) {
+      merchant = merchant.substring(0, 50);
+    }
+
+    // Determine transaction type
+    const type = typeStr.toLowerCase() === "credit" ? "credit" : "debit";
+
+    return {
+      id: generateTransactionId(),
+      date: date.toISOString(),
+      description: description,
+      amount: amount,
+      type: type,
+      source: "PhonePe",
+      merchant: merchant,
+      rawData: {
+        originalDate: dateStr,
+        originalTime: timeStr,
+        originalDetails: detailsStr,
+        originalType: typeStr,
+        originalAmount: amountStr,
+      },
+    };
+  } catch (error) {
+    console.error("Error creating PhonePe transaction:", error);
+    return null;
+  }
+}
+
+function parsePhonePeStatementDate(dateStr, timeStr) {
+  try {
+    // Parse "Jun 24, 2025" and "03:13 pm"
+    const months = {
+      Jan: 0,
+      Feb: 1,
+      Mar: 2,
+      Apr: 3,
+      May: 4,
+      Jun: 5,
+      Jul: 6,
+      Aug: 7,
+      Sep: 8,
+      Oct: 9,
+      Nov: 10,
+      Dec: 11,
+    };
+
+    const dateMatch = dateStr.match(
+      /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2}),\s+(\d{4})$/,
+    );
+    if (!dateMatch) return null;
+
+    const month = months[dateMatch[1]];
+    const day = parseInt(dateMatch[2]);
+    const year = parseInt(dateMatch[3]);
+
+    // Parse time if provided
+    let hours = 0;
+    let minutes = 0;
+
+    if (timeStr) {
+      const timeMatch = timeStr.match(/^(\d{1,2}):(\d{2})\s+(am|pm)$/);
+      if (timeMatch) {
+        hours = parseInt(timeMatch[1]);
+        minutes = parseInt(timeMatch[2]);
+        const ampm = timeMatch[3];
+
+        // Convert to 24-hour format
+        if (ampm === "pm" && hours !== 12) {
+          hours += 12;
+        } else if (ampm === "am" && hours === 12) {
+          hours = 0;
+        }
+      }
+    }
+
+    const date = new Date(year, month, day, hours, minutes);
+
+    // Validate the date
+    if (
+      date.getFullYear() === year &&
+      date.getMonth() === month &&
+      date.getDate() === day
+    ) {
+      return date;
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Error parsing PhonePe date:", error);
+    return null;
+  }
+}
+
+function parseGenericPhonePeStrategies(lines, fullText) {
+  const transactions = [];
 
   // Strategy 1: Look for transaction table rows
   console.log("🔍 Strategy 1: Looking for transaction table rows...");
