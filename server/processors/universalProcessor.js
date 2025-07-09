@@ -4,6 +4,133 @@ const csv = require("csv-parser");
 const xlsx = require("xlsx");
 
 /**
+ * PhonePe-Specific Strategy
+ * Handles PhonePe PDF statements with precise table structure parsing
+ */
+class PhonePeSpecificStrategy {
+  constructor() {
+    this.name = "PhonePe-Specific Parser";
+  }
+
+  async process(data, fileName) {
+    if (!fileName.toLowerCase().includes("phonepe")) {
+      console.log("🔍 PhonePe Strategy: Not a PhonePe file, skipping...");
+      return { transactions: [] };
+    }
+
+    console.log("🔍 PhonePe Strategy: Processing PhonePe PDF statement...");
+    const transactions = [];
+    const lines = data.lines || data.rawData.map((d) => d.content);
+
+    // PhonePe statement has structured table format
+    // Pattern: Date Transaction Details Type Amount
+    // Example: "Jun 24, 2025 03:13 pm DEBIT₹20,000Paid to RAHIM KUTUBUDDIN PINJARI"
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const transaction = this.parsePhonePeTransaction(line, i);
+      if (transaction) {
+        transactions.push(transaction);
+        console.log(
+          `✅ PhonePe transaction: ${transaction.description} - ₹${transaction.amount}`,
+        );
+      }
+    }
+
+    console.log(
+      `✅ PhonePe Strategy: Found ${transactions.length} valid transactions`,
+    );
+    return { transactions };
+  }
+
+  parsePhonePeTransaction(line, lineIndex) {
+    // Skip header lines and non-transaction lines
+    if (
+      line.includes("Transaction Statement") ||
+      line.includes("DateTransaction DetailsTypeAmount") ||
+      line.includes("Transaction ID") ||
+      line.includes("UTR No.") ||
+      line.includes("Credited to") ||
+      line.includes("XXXXXX") ||
+      line.length < 10 ||
+      /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/.test(line.trim()) ||
+      /^(am|pm)$/.test(line.trim()) ||
+      line.trim().match(/^\d{1,2}$/) // Just day numbers
+    ) {
+      return null;
+    }
+
+    // PhonePe transaction pattern: Date + Time + Type + Amount + Description
+    const phonepePattern =
+      /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}\s+\d{1,2}:\d{2}\s+(am|pm)\s+(DEBIT|CREDIT)₹([\d,]+(?:\.\d{2})?)(.+)$/i;
+
+    const match = line.match(phonepePattern);
+    if (!match) {
+      // Try alternative pattern for lines that might be split
+      const altPattern =
+        /(DEBIT|CREDIT)₹([\d,]+(?:\.\d{2})?)(Paid to|Received from)\s+(.+)/i;
+      const altMatch = line.match(altPattern);
+
+      if (altMatch) {
+        const [, type, amountStr, prefix, merchant] = altMatch;
+        const amount = parseFloat(amountStr.replace(/,/g, ""));
+
+        if (amount > 0 && amount < 10000000 && merchant.length > 2) {
+          // Reasonable limits
+          return {
+            date: "", // Will need to be filled from context
+            description: `${prefix} ${merchant.trim()}`,
+            merchant: merchant.trim(),
+            amount: amount,
+            type: type.toLowerCase() === "credit" ? "credit" : "debit",
+            confidence: "Medium",
+            source: "PhonePe",
+            rawData: { originalLine: line, lineIndex },
+          };
+        }
+      }
+      return null;
+    }
+
+    const [, month, , , , , type, amountStr, description] = match;
+    const amount = parseFloat(amountStr.replace(/,/g, ""));
+
+    // Validate transaction
+    if (amount <= 0 || amount > 10000000) return null; // Reasonable amount range
+    if (!description || description.length < 3) return null;
+
+    // Extract merchant name from description
+    let merchant = "";
+    let cleanDescription = description.trim();
+
+    if (cleanDescription.startsWith("Paid to ")) {
+      merchant = cleanDescription.replace("Paid to ", "").trim();
+      cleanDescription = `Paid to ${merchant}`;
+    } else if (cleanDescription.startsWith("Received from ")) {
+      merchant = cleanDescription.replace("Received from ", "").trim();
+      cleanDescription = `Received from ${merchant}`;
+    }
+
+    // Remove any remaining transaction IDs or UTR numbers from description
+    cleanDescription = cleanDescription
+      .replace(/Transaction ID [A-Z0-9]+/gi, "")
+      .replace(/UTR No\. [0-9]+/gi, "")
+      .trim();
+
+    return {
+      date: match[0].match(/^[A-Za-z]+ \d{1,2}, \d{4}/)[0], // Extract just the date part
+      description: cleanDescription,
+      merchant: merchant || "Unknown",
+      amount: amount,
+      type: type.toLowerCase() === "credit" ? "credit" : "debit",
+      confidence: "High",
+      source: "PhonePe",
+      rawData: { originalLine: line, lineIndex },
+    };
+  }
+}
+
+/**
  * Universal Transaction File Processor
  *
  * This processor can handle ANY file format and ANY transaction layout.
