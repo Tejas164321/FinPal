@@ -4,7 +4,7 @@ const { detectSource } = require("./sourceDetector");
 
 async function processPDF(filePath, fileName) {
   try {
-    console.log(`��� Processing PDF file: ${fileName}`);
+    console.log(`📄 Processing PDF file: ${fileName}`);
 
     const dataBuffer = fs.readFileSync(filePath);
     const pdfData = await pdfParse(dataBuffer);
@@ -60,7 +60,7 @@ function parseTransactionsFromText(text, source) {
 
 function parsePhonePePDF(lines, fullText) {
   console.log("📱 Specialized PhonePe Statement Parser Starting...");
-  console.log(`📄 Total lines to process: ${lines.length}`);
+  console.log(`��� Total lines to process: ${lines.length}`);
 
   const transactions = [];
 
@@ -146,6 +146,7 @@ function parsePhonePeStatementFormat(lines, fullText) {
       /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2}),\s+(\d{4})$/,
     );
     if (dateMatch) {
+      console.log(`✅ Found DATE: "${line}"`);
       currentDate = line;
       continue;
     }
@@ -153,6 +154,7 @@ function parsePhonePeStatementFormat(lines, fullText) {
     // Pattern 2: Time line (e.g., "03:13 pm")
     const timeMatch = line.match(/^(\d{1,2}):(\d{2})\s+(am|pm)$/);
     if (timeMatch) {
+      console.log(`✅ Found TIME: "${line}"`);
       currentTime = line;
       continue;
     }
@@ -162,6 +164,7 @@ function parsePhonePeStatementFormat(lines, fullText) {
       /^(Paid to|Received from|Electricity bill paid)\s+(.+)$/,
     );
     if (detailsMatch) {
+      console.log(`✅ Found DETAILS: "${line}"`);
       currentDetails = line;
       continue;
     }
@@ -171,6 +174,7 @@ function parsePhonePeStatementFormat(lines, fullText) {
       /^(DEBIT|CREDIT)\s+₹([0-9,]+(?:\.\d{1,2})?)$/,
     );
     if (typeAmountMatch) {
+      console.log(`✅ Found TYPE/AMOUNT: "${line}"`);
       currentType = typeAmountMatch[1];
       currentAmount = typeAmountMatch[2];
 
