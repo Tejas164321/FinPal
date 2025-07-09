@@ -534,6 +534,59 @@ async function categorizeTransaction(description) {
 
   console.log(`🔍 Categorizing: "${description}"`);
 
+  // Step 0: Special handling for personal transfers and known patterns
+  if (desc.includes("received from") || desc.includes("paid to")) {
+    // Check if it's a personal name (heuristic: contains common name patterns)
+    const personalNamePatterns = [
+      /received from [a-z]+ [a-z]+$/i, // "received from john doe"
+      /paid to [a-z]+ [a-z]+$/i, // "paid to jane smith"
+      /received from [a-z]+ [a-z]+ [a-z]+$/i, // "received from john doe smith"
+      /paid to [a-z]+ [a-z]+ [a-z]+$/i, // "paid to jane doe smith"
+    ];
+
+    const isPersonalTransfer = personalNamePatterns.some((pattern) =>
+      pattern.test(desc),
+    );
+
+    if (isPersonalTransfer) {
+      // Determine if it's family/friends or business based on context
+      const familyKeywords = [
+        "mama",
+        "papa",
+        "bhai",
+        "didi",
+        "uncle",
+        "aunty",
+        "dad",
+        "mom",
+        "brother",
+        "sister",
+      ];
+      const isFamilyTransfer = familyKeywords.some((keyword) =>
+        desc.includes(keyword),
+      );
+
+      return {
+        category: isFamilyTransfer ? "Family & Friends" : "Personal Transfer",
+        confidence: "High",
+        source: "Personal Transfer Detection",
+      };
+    }
+  }
+
+  // Handle electricity bill payments
+  if (
+    desc.includes("electricity") ||
+    desc.includes("electric") ||
+    desc.includes("power bill")
+  ) {
+    return {
+      category: "Bills & Utilities",
+      confidence: "High",
+      source: "Bill Detection",
+    };
+  }
+
   // Step 1: Try exact merchant match (highest confidence)
   for (const [merchant, category] of Object.entries(MERCHANT_CATEGORIES)) {
     if (desc.includes(merchant.toLowerCase())) {
@@ -546,7 +599,7 @@ async function categorizeTransaction(description) {
   for (const [category, keywords] of Object.entries(KEYWORD_CATEGORIES)) {
     for (const keyword of keywords) {
       if (desc.includes(keyword.toLowerCase())) {
-        console.log(`✅ Keyword match: ${keyword} → ${category}`);
+        console.log(`��� Keyword match: ${keyword} → ${category}`);
         return { category, confidence: "Medium", source: "Rule" };
       }
     }
