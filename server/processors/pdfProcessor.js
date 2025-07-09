@@ -10,6 +10,12 @@ async function processPDF(filePath, fileName) {
     const pdfData = await pdfParse(dataBuffer);
     const content = pdfData.text;
 
+    console.log(`📝 PDF Content Length: ${content.length} characters`);
+    console.log(`📝 First 500 characters of PDF content:`);
+    console.log(content.substring(0, 500));
+    console.log(`📝 Last 500 characters of PDF content:`);
+    console.log(content.substring(Math.max(0, content.length - 500)));
+
     const source = detectSource(fileName, content);
     console.log(`🔍 Detected source: ${source}`);
 
@@ -17,6 +23,15 @@ async function processPDF(filePath, fileName) {
     const transactions = parseTransactionsFromText(content, source);
 
     console.log(`✅ PDF processed: ${transactions.length} transactions found`);
+
+    if (transactions.length > 0) {
+      console.log(`📊 Sample transactions:`);
+      transactions.slice(0, 3).forEach((t, i) => {
+        console.log(
+          `Transaction ${i + 1}: ${t.description} - ₹${t.amount} on ${t.date}`,
+        );
+      });
+    }
 
     return { transactions, source };
   } catch (error) {
@@ -92,7 +107,7 @@ function parsePhonePePDF(lines) {
   }
 
   console.log(
-    `✅ PhonePe PDF parsing complete: ${transactions.length} transactions found`,
+    `��� PhonePe PDF parsing complete: ${transactions.length} transactions found`,
   );
   return transactions;
 }
