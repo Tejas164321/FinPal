@@ -77,7 +77,7 @@ app.get("/api/health", (req, res) => {
 // File upload endpoint
 app.post("/api/upload", upload.single("file"), async (req, res) => {
   try {
-    console.log("📁 File upload started:", req.file?.originalname);
+    console.log("���� File upload started:", req.file?.originalname);
 
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
@@ -157,6 +157,43 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
   }
 });
 
+// Debug endpoint to examine PDF content
+app.post("/api/debug-pdf", upload.single("file"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    const filePath = req.file.path;
+    const pdfParse = require("pdf-parse");
+    const fs = require("fs");
+
+    const dataBuffer = fs.readFileSync(filePath);
+    const pdfData = await pdfParse(dataBuffer);
+    const content = pdfData.text;
+
+    // Clean up uploaded file
+    fs.unlinkSync(filePath);
+
+    res.json({
+      success: true,
+      data: {
+        totalPages: pdfData.numpages,
+        textLength: content.length,
+        first1000chars: content.substring(0, 1000),
+        lines: content.split("\n").slice(0, 50), // First 50 lines
+        hasRupeeSymbol: content.includes("₹"),
+        hasDatePattern: /\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}/.test(content),
+        hasAmountPattern: /\d+\.\d{2}|\d+,\d+/.test(content),
+        fileName: req.file.originalname,
+      },
+    });
+  } catch (error) {
+    console.error("Debug PDF error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get processing status (for future use with async processing)
 app.get("/api/status/:jobId", (req, res) => {
   // This would track processing jobs in a real implementation
@@ -214,5 +251,5 @@ app.use((error, req, res, next) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 FinPal Backend API running on port ${PORT}`);
-  console.log(`📡 Health check: http://localhost:${PORT}/api/health`);
+  console.log(`���� Health check: http://localhost:${PORT}/api/health`);
 });
