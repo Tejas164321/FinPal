@@ -6,9 +6,9 @@ const fs = require("fs");
 require("dotenv").config();
 
 // Import our processing modules
-const { processCSV } = require("./processors/csvProcessor");
-const { processPDF } = require("./processors/pdfProcessor");
-const { processExcel } = require("./processors/excelProcessor");
+const {
+  UniversalTransactionProcessor,
+} = require("./processors/universalProcessor");
 const {
   categorizeTransactions,
 } = require("./processors/transactionCategorizer");
