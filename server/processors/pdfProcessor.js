@@ -41,13 +41,12 @@ async function processPDF(filePath, fileName) {
 }
 
 function parseTransactionsFromText(text, source) {
-  const transactions = [];
   const lines = text.split("\n").map((line) => line.trim());
 
   // Different parsing strategies based on source
   switch (source) {
     case "PhonePe":
-      return parsePhonePePDF(lines);
+      return parsePhonePePDF(lines, text);
     case "GPay":
       return parseGPayPDF(lines);
     case "Paytm":
@@ -59,163 +58,323 @@ function parseTransactionsFromText(text, source) {
   }
 }
 
-function parsePhonePePDF(lines) {
-  console.log("📱 Parsing PhonePe PDF statement...");
+function parsePhonePePDF(lines, fullText) {
+  console.log("📱 Enhanced PhonePe PDF Parser Starting...");
+  console.log(`📄 Total lines to process: ${lines.length}`);
+
   const transactions = [];
 
-  // PhonePe PDF patterns to look for
-  const transactionStartMarkers = [
-    /transaction\s*details/i,
-    /payment\s*to/i,
-    /received\s*from/i,
-    /money\s*sent/i,
-    /money\s*received/i,
-    /wallet\s*to\s*wallet/i,
-    /upi\s*payment/i,
-  ];
+  // Log first 20 lines for debugging
+  console.log("🔍 First 20 lines of PDF:");
+  lines.slice(0, 20).forEach((line, i) => {
+    if (line.trim()) {
+      console.log(`Line ${i + 1}: "${line}"`);
+    }
+  });
 
-  // Date patterns (DD/MM/YYYY, DD-MM-YYYY, etc.)
-  const dateRegex = /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/;
+  // Strategy 1: Look for transaction table rows
+  console.log("🔍 Strategy 1: Looking for transaction table rows...");
+  const potentialRows = lines.filter((line) => {
+    const hasDate = /\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}/.test(line);
+    const hasAmount = /₹\s*\d+|^\d+\.\d{2}|\d+,\d+/.test(line);
+    return hasDate && hasAmount && line.length > 15;
+  });
 
-  // Amount patterns (₹123.45, 123.45, etc.)
-  const amountRegex = /₹?\s*(\d+(?:,\d+)*(?:\.\d{1,2})?)/;
+  console.log(`Found ${potentialRows.length} potential transaction rows`);
+  potentialRows.forEach((row, i) => {
+    console.log(`Row ${i + 1}: "${row}"`);
+    const transaction = parseTransactionRow(row, i);
+    if (transaction) {
+      transactions.push(transaction);
+      console.log(
+        `✅ Extracted: ${transaction.description} - ₹${transaction.amount}`,
+      );
+    }
+  });
 
-  console.log(`📄 Processing ${lines.length} lines from PhonePe PDF...`);
+  // Strategy 2: Line-by-line pattern matching
+  if (transactions.length < 5) {
+    console.log("🔍 Strategy 2: Line-by-line pattern matching...");
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
+    for (let i = 0; i < lines.length - 1; i++) {
+      const currentLine = lines[i].trim();
+      const nextLine = lines[i + 1] ? lines[i + 1].trim() : "";
+      const combinedLine = `${currentLine} ${nextLine}`;
 
-    // Skip empty lines
-    if (!line) continue;
+      // Look for amount patterns
+      if (/₹\s*\d+|\d+\.\d{2}/.test(combinedLine)) {
+        const transaction = parseAnythingWithAmount(combinedLine, i);
+        if (transaction) {
+          transactions.push(transaction);
+          console.log(
+            `✅ Found transaction: ${transaction.description} - ₹${transaction.amount}`,
+          );
+        }
+      }
+    }
+  }
 
-    // Look for transaction markers
-    const isTransactionLine = transactionStartMarkers.some((pattern) =>
-      pattern.test(line),
-    );
+  // Strategy 3: Extract all amounts with context
+  if (transactions.length === 0) {
+    console.log("🔍 Strategy 3: Extracting all amounts with context...");
 
-    if (isTransactionLine || dateRegex.test(line)) {
-      console.log(`🔍 Found potential transaction at line ${i}: "${line}"`);
+    const amountPattern = /₹?\s*(\d+(?:,\d+)*(?:\.\d{1,2})?)/g;
+    let match;
+    let index = 0;
 
-      // Try to extract transaction data from this line and surrounding context
-      const transaction = extractPhonePeTransaction(lines, i);
+    while ((match = amountPattern.exec(fullText)) !== null && index < 20) {
+      const amount = parseFloat(match[1].replace(/,/g, ""));
 
-      if (transaction) {
-        transactions.push(transaction);
-        console.log(`✅ Extracted transaction: ${transaction.description}`);
+      if (amount > 10) {
+        // Filter out small amounts that might be fees, etc.
+        const context = fullText.substring(
+          Math.max(0, match.index - 100),
+          match.index + 100,
+        );
+        console.log(`Amount found: ₹${amount}, Context: "${context}"`);
+
+        const transaction = createTransactionFromAmount(amount, context, index);
+        if (transaction) {
+          transactions.push(transaction);
+        }
+        index++;
       }
     }
   }
 
   console.log(
-    `��� PhonePe PDF parsing complete: ${transactions.length} transactions found`,
+    `✅ PhonePe PDF parsing complete: ${transactions.length} transactions found`,
   );
-  return transactions;
+
+  // Remove duplicates based on amount and date similarity
+  const uniqueTransactions = removeDuplicateTransactions(transactions);
+  console.log(
+    `✅ After deduplication: ${uniqueTransactions.length} unique transactions`,
+  );
+
+  return uniqueTransactions;
 }
 
-function extractPhonePeTransaction(lines, startIndex) {
-  const contextLines = [];
-
-  // Gather context - current line and next few lines
-  for (let i = 0; i < 5 && startIndex + i < lines.length; i++) {
-    const line = lines[startIndex + i].trim();
-    if (line) {
-      contextLines.push(line);
-    }
-  }
-
-  const fullContext = contextLines.join(" ");
-  console.log(`🔍 Transaction context: "${fullContext}"`);
+function parseTransactionRow(row, index) {
+  console.log(`🔍 Parsing row: "${row}"`);
 
   // Extract date
-  const dateMatch = fullContext.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/);
-  if (!dateMatch) {
-    console.log("⚠️ No date found in context");
+  const dateMatch = row.match(/(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})/);
+
+  // Extract amount (multiple patterns)
+  const amountPatterns = [
+    /₹\s*(\d+(?:,\d+)*(?:\.\d{1,2})?)/,
+    /(\d+\.\d{2})/,
+    /(\d+,\d+)/,
+    /(\d+)\s*$/, // Number at end of line
+  ];
+
+  let amountMatch = null;
+  for (const pattern of amountPatterns) {
+    amountMatch = row.match(pattern);
+    if (amountMatch) break;
+  }
+
+  if (!dateMatch && !amountMatch) {
+    console.log("❌ No date or amount found");
     return null;
   }
 
-  const date = parseDate(dateMatch[1]);
-  if (!date) {
-    console.log("⚠️ Could not parse date:", dateMatch[1]);
+  // Parse date
+  let date = new Date();
+  if (dateMatch) {
+    date = parsePhonePeDate(dateMatch[1]) || new Date();
+  }
+
+  // Parse amount
+  let amount = 0;
+  if (amountMatch) {
+    amount = parseFloat(amountMatch[1].replace(/[₹,\s]/g, ""));
+  }
+
+  if (amount <= 0) {
+    console.log("❌ Invalid amount");
     return null;
   }
 
-  // Extract amount
-  const amountMatches = fullContext.match(/₹?\s*(\d+(?:,\d+)*(?:\.\d{1,2})?)/g);
-  if (!amountMatches || amountMatches.length === 0) {
-    console.log("⚠️ No amount found in context");
-    return null;
-  }
-
-  // Take the largest amount found (likely the transaction amount)
-  let maxAmount = 0;
-  for (const match of amountMatches) {
-    const cleanAmount = parseFloat(match.replace(/[₹,\s]/g, ""));
-    if (cleanAmount > maxAmount) {
-      maxAmount = cleanAmount;
-    }
-  }
-
-  if (maxAmount === 0) {
-    console.log("⚠️ No valid amount found");
-    return null;
-  }
-
-  // Determine transaction type
-  let type = "debit"; // Default
-  const creditKeywords = ["received", "credit", "refund", "cashback"];
-  const debitKeywords = ["sent", "paid", "payment", "debit", "transfer"];
-
-  const lowerContext = fullContext.toLowerCase();
-  if (creditKeywords.some((keyword) => lowerContext.includes(keyword))) {
-    type = "credit";
-  } else if (debitKeywords.some((keyword) => lowerContext.includes(keyword))) {
-    type = "debit";
-  }
-
-  // Extract description - clean up the context
-  let description = fullContext
-    .replace(/₹?\s*\d+(?:,\d+)*(?:\.\d{1,2})?/g, "") // Remove amounts
-    .replace(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/g, "") // Remove dates
-    .replace(/\s+/g, " ") // Normalize spaces
+  // Create description by removing date and amount
+  let description = row
+    .replace(/\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}/g, "")
+    .replace(/₹?\s*\d+(?:,\d+)*(?:\.\d{1,2})?/g, "")
+    .replace(/\s+/g, " ")
     .trim();
 
-  // If description is too short, use a more generic one
-  if (description.length < 10) {
-    description = type === "credit" ? "Money Received" : "Payment Made";
+  if (description.length < 3) {
+    description = `PhonePe Transaction ${index + 1}`;
   }
 
-  // Limit description length
-  if (description.length > 100) {
-    description = description.substring(0, 100) + "...";
+  // Determine type
+  const type = /credit|received|refund|cashback/i.test(row)
+    ? "credit"
+    : "debit";
+
+  const transaction = {
+    id: generateTransactionId(),
+    date: date.toISOString(),
+    description: description.substring(0, 100),
+    amount: amount,
+    type: type,
+    source: "PhonePe",
+    merchant: extractSimpleMerchant(description),
+    rawData: { originalRow: row },
+  };
+
+  console.log(`✅ Created transaction:`, transaction);
+  return transaction;
+}
+
+function parseAnythingWithAmount(text, lineIndex) {
+  const amountMatch = text.match(/₹?\s*(\d+(?:,\d+)*(?:\.\d{1,2})?)/);
+  if (!amountMatch) return null;
+
+  const amount = parseFloat(amountMatch[1].replace(/[₹,\s]/g, ""));
+  if (amount <= 10) return null; // Skip very small amounts
+
+  // Try to find a date
+  let date = new Date();
+  const dateMatch = text.match(/(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})/);
+  if (dateMatch) {
+    date = parsePhonePeDate(dateMatch[1]) || new Date();
+  }
+
+  // Create description
+  let description = text
+    .replace(/₹?\s*\d+(?:,\d+)*(?:\.\d{1,2})?/g, "")
+    .replace(/\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (description.length < 5) {
+    description = `PhonePe Payment ${lineIndex + 1}`;
   }
 
   return {
     id: generateTransactionId(),
     date: date.toISOString(),
-    description: description,
-    amount: maxAmount,
-    type: type,
+    description: description.substring(0, 100),
+    amount: amount,
+    type: "debit",
     source: "PhonePe",
-    merchant: extractMerchant(description),
-    rawData: { pdfContext: fullContext },
+    merchant: extractSimpleMerchant(description),
+    rawData: { lineIndex, originalText: text },
   };
+}
+
+function createTransactionFromAmount(amount, context, index) {
+  // Try to extract meaningful description from context
+  let description = context
+    .replace(/₹?\s*\d+(?:,\d+)*(?:\.\d{1,2})?/g, "")
+    .replace(/\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}/g, "")
+    .replace(/[^\w\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // Find meaningful words
+  const words = description
+    .split(" ")
+    .filter(
+      (word) =>
+        word.length > 2 &&
+        !/^(the|and|for|to|from|at|in|on|with|of|by)$/i.test(word),
+    );
+
+  if (words.length > 0) {
+    description = words.slice(0, 4).join(" ");
+  } else {
+    description = `PhonePe Transaction ${index + 1}`;
+  }
+
+  return {
+    id: generateTransactionId(),
+    date: new Date().toISOString(),
+    description: description.substring(0, 100),
+    amount: amount,
+    type: "debit",
+    source: "PhonePe",
+    merchant: extractSimpleMerchant(description),
+    rawData: { context: context.substring(0, 200), extractedFromAmount: true },
+  };
+}
+
+function parsePhonePeDate(dateStr) {
+  const formats = [
+    /^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/, // DD/MM/YYYY
+    /^(\d{2,4})[\/-](\d{1,2})[\/-](\d{1,2})$/, // YYYY/MM/DD
+  ];
+
+  for (const format of formats) {
+    const match = dateStr.match(format);
+    if (match) {
+      let day, month, year;
+
+      if (match[3] && match[3].length === 4) {
+        // DD/MM/YYYY
+        day = parseInt(match[1]);
+        month = parseInt(match[2]) - 1;
+        year = parseInt(match[3]);
+      } else {
+        // YYYY/MM/DD
+        year = parseInt(match[1]);
+        month = parseInt(match[2]) - 1;
+        day = parseInt(match[3]);
+      }
+
+      const date = new Date(year, month, day);
+      if (
+        date.getFullYear() === year &&
+        date.getMonth() === month &&
+        date.getDate() === day
+      ) {
+        return date;
+      }
+    }
+  }
+
+  return null;
+}
+
+function extractSimpleMerchant(description) {
+  const words = description.split(/[\s\-_]+/);
+  const meaningfulWord = words.find(
+    (word) =>
+      word.length > 2 &&
+      !/^(the|and|for|to|from|at|in|on|with|payment|transaction|upi)$/i.test(
+        word,
+      ),
+  );
+  return meaningfulWord || "PhonePe";
+}
+
+function removeDuplicateTransactions(transactions) {
+  const seen = new Set();
+  return transactions.filter((transaction) => {
+    const key = `${transaction.amount}-${transaction.date.split("T")[0]}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
 }
 
 function parseGPayPDF(lines) {
   console.log("📱 Parsing Google Pay PDF statement...");
-  // Similar implementation for GPay PDFs
   return parseGenericUPIPDF(lines, "GPay");
 }
 
 function parsePaytmPDF(lines) {
   console.log("📱 Parsing Paytm PDF statement...");
-  // Similar implementation for Paytm PDFs
   return parseGenericUPIPDF(lines, "Paytm");
 }
 
 function parseGenericUPIPDF(lines, source) {
   const transactions = [];
-  const dateRegex = /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/;
+  const dateRegex = /(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})/;
   const amountRegex = /₹?\s*(\d+(?:,\d+)*(?:\.\d{1,2})?)/;
 
   for (let i = 0; i < lines.length; i++) {
@@ -252,7 +411,7 @@ function parseGenericUPIPDF(lines, source) {
 
 function parseBankStatementPDF(lines) {
   const transactions = [];
-  const dateRegex = /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/;
+  const dateRegex = /(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})/;
   const amountRegex = /(\d+[,.]?\d*\.?\d{0,2})/;
 
   for (let i = 0; i < lines.length; i++) {
@@ -327,7 +486,7 @@ function parseGenericPDF(lines) {
   const transactions = [];
 
   // Try to find actual transaction data first
-  const dateRegex = /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/;
+  const dateRegex = /(\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4})/;
   const amountRegex = /₹?\s*(\d+(?:,\d+)*(?:\.\d{1,2})?)/;
 
   console.log(`📄 Scanning ${lines.length} lines for transaction patterns...`);
@@ -397,40 +556,109 @@ function parseGenericPDF(lines) {
   return transactions;
 }
 
+// Enhanced date parsing function
 function parseDate(dateStr) {
   if (!dateStr) return null;
 
-  // Handle different date formats
+  // Clean the date string
+  const cleaned = dateStr.toString().trim();
+
+  // Try different date formats common in Indian transactions
   const formats = [
-    /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // DD/MM/YYYY
-    /^(\d{1,2})-(\d{1,2})-(\d{4})$/, // DD-MM-YYYY
-    /^(\d{4})-(\d{1,2})-(\d{1,2})$/, // YYYY-MM-DD
-    /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/, // DD/MM/YY
+    // DD/MM/YYYY
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
+    // DD-MM-YYYY
+    /^(\d{1,2})-(\d{1,2})-(\d{4})$/,
+    // YYYY-MM-DD
+    /^(\d{4})-(\d{1,2})-(\d{1,2})$/,
+    // DD.MM.YYYY
+    /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/,
+    // DD/MM/YY
+    /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/,
+    // DD-MM-YY
+    /^(\d{1,2})-(\d{1,2})-(\d{2})$/,
   ];
 
   for (const format of formats) {
-    const match = dateStr.match(format);
+    const match = cleaned.match(format);
     if (match) {
+      let day, month, year;
+
       if (format.source.startsWith("^(\\d{4})")) {
-        // YYYY-MM-DD
-        return new Date(match[1], match[2] - 1, match[3]);
-      } else if (match[3].length === 2) {
-        // YY format - assume 20YY
-        const year = 2000 + parseInt(match[3]);
-        return new Date(year, match[2] - 1, match[1]);
+        // YYYY-MM-DD format
+        year = parseInt(match[1]);
+        month = parseInt(match[2]) - 1; // JS months are 0-indexed
+        day = parseInt(match[3]);
       } else {
-        // DD/MM/YYYY or DD-MM-YYYY
-        return new Date(match[3], match[2] - 1, match[1]);
+        // DD/MM/YYYY or DD-MM-YYYY format
+        day = parseInt(match[1]);
+        month = parseInt(match[2]) - 1; // JS months are 0-indexed
+        year = parseInt(match[3]);
+
+        // Handle 2-digit years
+        if (year < 100) {
+          year = year > 50 ? 1900 + year : 2000 + year;
+        }
+      }
+
+      // Validate date components
+      if (
+        month >= 0 &&
+        month <= 11 &&
+        day >= 1 &&
+        day <= 31 &&
+        year >= 1970 &&
+        year <= new Date().getFullYear() + 1
+      ) {
+        const parsedDate = new Date(year, month, day);
+        if (
+          parsedDate.getFullYear() === year &&
+          parsedDate.getMonth() === month &&
+          parsedDate.getDate() === day
+        ) {
+          return parsedDate;
+        }
       }
     }
   }
 
+  // Try native Date parsing as fallback
+  const parsed = new Date(cleaned);
+  if (!isNaN(parsed.getTime()) && parsed.getFullYear() >= 1970) {
+    return parsed;
+  }
+
+  console.warn(`Could not parse date: ${dateStr}`);
   return null;
 }
 
 function extractMerchant(description) {
-  const words = description.split(/[\s\-_]+/);
-  return words.find((word) => word.length > 2) || "Unknown";
+  // Enhanced merchant extraction
+  const desc = description.toLowerCase().trim();
+
+  // Common UPI patterns
+  const upiPatterns = [
+    /to\s+([^-\s]+)/i, // "TO MERCHANT"
+    /from\s+([^-\s]+)/i, // "FROM MERCHANT"
+    /paid\s+to\s+([^-\s]+)/i, // "PAID TO MERCHANT"
+    /received\s+from\s+([^-\s]+)/i, // "RECEIVED FROM MERCHANT"
+  ];
+
+  for (const pattern of upiPatterns) {
+    const match = description.match(pattern);
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+  }
+
+  // Fallback to first meaningful word
+  const words = description.split(/[\s\-_@]+/);
+  const meaningfulWord = words.find(
+    (word) =>
+      word.length > 2 && !/^(the|and|for|to|from|at|in|on|with)$/i.test(word),
+  );
+
+  return meaningfulWord || "Unknown";
 }
 
 function generateTransactionId() {
