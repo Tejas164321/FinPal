@@ -578,6 +578,11 @@ class PatternBasedStrategy {
       .replace(/[₹$]\s*\d+(?:,\d+)*(?:\.\d{2})?/g, "")
       .replace(/\d+(?:,\d+)*(?:\.\d{2})?/g, "")
       .replace(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/g, "")
+      .replace(/\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/g, "")
+      .replace(
+        /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}\s+\d{1,2}:\d{2}\s+(am|pm)/gi,
+        "",
+      )
       .replace(
         /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}/gi,
         "",
