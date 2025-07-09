@@ -64,13 +64,40 @@ function parsePhonePePDF(lines, fullText) {
 
   const transactions = [];
 
-  // Log first 20 lines for debugging
-  console.log("🔍 First 20 lines of PDF:");
-  lines.slice(0, 20).forEach((line, i) => {
-    if (line.trim()) {
+  // Comprehensive PDF analysis
+  console.log("🔍 === PDF CONTENT ANALYSIS ===");
+  console.log(`Total characters: ${fullText.length}`);
+  console.log(`Total lines: ${lines.length}`);
+  console.log(`Non-empty lines: ${lines.filter((l) => l.trim()).length}`);
+
+  // Check for common patterns
+  const hasRupee = /₹/.test(fullText);
+  const hasNumbers = /\d{3,}/.test(fullText);
+  const hasDates = /\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}/.test(fullText);
+  const hasPhonePe = /phonepe|phone\s*pe/i.test(fullText);
+
+  console.log(`Contains ₹: ${hasRupee}`);
+  console.log(`Contains numbers: ${hasNumbers}`);
+  console.log(`Contains dates: ${hasDates}`);
+  console.log(`Contains "PhonePe": ${hasPhonePe}`);
+
+  // Log first 20 meaningful lines
+  console.log("🔍 First 20 meaningful lines:");
+  lines
+    .filter((l) => l.trim())
+    .slice(0, 20)
+    .forEach((line, i) => {
       console.log(`Line ${i + 1}: "${line}"`);
-    }
+    });
+
+  // Log any lines with numbers
+  const numberLines = lines.filter((l) => /\d{3,}/.test(l)).slice(0, 10);
+  console.log(`🔍 Lines with numbers (first 10):`);
+  numberLines.forEach((line, i) => {
+    console.log(`Number line ${i + 1}: "${line}"`);
   });
+
+  console.log("🔍 === END ANALYSIS ===");
 
   // Strategy 1: Look for transaction table rows
   console.log("🔍 Strategy 1: Looking for transaction table rows...");
