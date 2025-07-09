@@ -27,6 +27,11 @@ const MERCHANT_CATEGORIES = {
   "behrouz biryani": "Food & Dining",
   "oven story": "Food & Dining",
   faasos: "Food & Dining",
+  restaurant: "Food & Dining",
+  hotel: "Food & Dining",
+  "food court": "Food & Dining",
+  canteen: "Food & Dining",
+  dhaba: "Food & Dining",
 
   // Transportation - Ride sharing, fuel, travel
   uber: "Transportation",
@@ -56,6 +61,12 @@ const MERCHANT_CATEGORIES = {
   "parking fee": "Transportation",
   toll: "Transportation",
   fastag: "Transportation",
+  "make my trip": "Transportation",
+  makemytrip: "Transportation",
+  "trip advisor": "Transportation",
+  goibibo: "Transportation",
+  "clear trip": "Transportation",
+  redbus: "Transportation",
 
   // Shopping - E-commerce and retail
   amazon: "Shopping",
@@ -88,6 +99,12 @@ const MERCHANT_CATEGORIES = {
   paytmmall: "Shopping",
   "paytm mall": "Shopping",
   meesho: "Shopping",
+  mart: "Shopping",
+  store: "Shopping",
+  market: "Shopping",
+  bazaar: "Shopping",
+  mall: "Shopping",
+  showroom: "Shopping",
 
   // Entertainment - Streaming, movies, games
   netflix: "Entertainment",
