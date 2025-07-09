@@ -128,6 +128,35 @@ export async function uploadFile(
   }
 }
 
+// Debug PDF content
+export async function debugPDF(file: File): Promise<ApiResponse<any>> {
+  try {
+    console.log(`🔍 Debugging PDF: ${file.name}`);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(`${API_BASE_URL}/debug-pdf`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Debug failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("🔍 PDF Debug Results:", data);
+    return data;
+  } catch (error) {
+    console.error("❌ Debug error:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Debug failed",
+    };
+  }
+}
+
 // Get processing status (for future async processing)
 export async function getProcessingStatus(
   jobId: string,
