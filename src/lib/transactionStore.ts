@@ -288,7 +288,12 @@ export const transactionStore = new TransactionStore();
 
 // Load sample data for demo purposes only if no real data exists
 if (transactionStore.getAllTransactions().length === 0) {
+  console.log("🔧 Loading sample data because no real transactions exist");
   transactionStore.loadSampleData();
+} else {
+  console.log(
+    `🔧 Transaction store has ${transactionStore.getAllTransactions().length} existing transactions`,
+  );
 }
 
 // Export types
