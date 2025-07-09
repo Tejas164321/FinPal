@@ -129,6 +129,8 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
         transactions: categorizedTransactions,
         summary,
         source,
+        strategy: strategy,
+        confidence: confidence,
         fileName: req.file.originalname,
         processedAt: new Date().toISOString(),
       },
