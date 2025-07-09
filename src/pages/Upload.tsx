@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import AppLayout from "@/components/layout/AppLayout";
 import { useFileUpload } from "@/hooks/useFileUpload";
+import { debugPDF } from "@/lib/api";
 import {
   Upload as UploadIcon,
   FileText,
@@ -18,6 +19,7 @@ import {
   Eye,
   Trash2,
   Smartphone,
+  Bug,
 } from "lucide-react";
 
 const Upload = () => {
