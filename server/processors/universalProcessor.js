@@ -555,12 +555,23 @@ class PatternBasedStrategy {
 
     if (maxAmount === 0) return null;
 
-    // Look for date patterns
-    const dateMatch =
-      line.match(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/) ||
-      line.match(
-        /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}/i,
-      );
+    // Look for date patterns (same as extractDateFromContext)
+    const datePatterns = [
+      // PhonePe format: "Jun 24, 2025 03:13 pm"
+      /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}\s+\d{1,2}:\d{2}\s+(am|pm)/i,
+      // Standard month format: "Jun 24, 2025"
+      /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}/i,
+      // Numeric format: "24/06/2025" or "24-06-2025"
+      /\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/,
+      // ISO format: "2025-06-24"
+      /\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/,
+    ];
+
+    let dateMatch = null;
+    for (const pattern of datePatterns) {
+      dateMatch = line.match(pattern);
+      if (dateMatch) break;
+    }
 
     // Extract description (remove amounts and dates)
     let description = line
