@@ -213,6 +213,104 @@ class PhonePeSpecificStrategy {
     console.log(`⚠️ No date found in context for line ${lineIndex}`);
     return null;
   }
+
+  parsePhonePeMultiLineTransaction(lines, i) {
+    // PhonePe format:
+    // Line i: "Jun 24, 2025"
+    // Line i+1: "03:13 pm"
+    // Line i+2: "Paid to RAHIM KUTUBUDDIN PINJARI DEBIT ₹20,000"
+
+    const dateLine = lines[i]?.trim();
+    const timeLine = lines[i + 1]?.trim();
+    const transactionLine = lines[i + 2]?.trim();
+
+    // Check if this looks like a PhonePe transaction group
+    const datePattern =
+      /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}$/i;
+    const timePattern = /^\d{1,2}:\d{2}\s+(am|pm)$/i;
+
+    if (!dateLine || !timeLine || !transactionLine) return null;
+    if (!datePattern.test(dateLine)) return null;
+    if (!timePattern.test(timeLine)) return null;
+
+    console.log(
+      `🔍 Parsing PhonePe multi-line: "${dateLine}" "${timeLine}" "${transactionLine}"`,
+    );
+
+    // Parse the transaction line for amount and details
+    const debitPattern = /(.*?)\s+DEBIT\s+₹([\d,]+(?:\.\d{2})?)/i;
+    const creditPattern = /(.*?)\s+CREDIT\s+₹([\d,]+(?:\.\d{2})?)/i;
+
+    let match =
+      transactionLine.match(debitPattern) ||
+      transactionLine.match(creditPattern);
+    if (!match) return null;
+
+    const [, description, amountStr] = match;
+    const amount = parseFloat(amountStr.replace(/,/g, ""));
+    const type = transactionLine.includes("CREDIT") ? "credit" : "debit";
+
+    // Validate amount
+    if (amount <= 0 || amount > 10000000) return null;
+
+    // Clean up description
+    let cleanDescription = description.trim();
+    let merchant = "";
+
+    if (cleanDescription.startsWith("Paid to ")) {
+      merchant = cleanDescription.replace("Paid to ", "").trim();
+      cleanDescription = `Paid to ${merchant}`;
+    } else if (cleanDescription.startsWith("Received from ")) {
+      merchant = cleanDescription.replace("Received from ", "").trim();
+      cleanDescription = `Received from ${merchant}`;
+    } else if (cleanDescription.includes("bill paid")) {
+      // Handle electricity bills etc
+      merchant = "Utility Company";
+    }
+
+    // Format date properly
+    const dateMatch = dateLine.match(
+      /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2}),\s+(\d{4})/i,
+    );
+    let formattedDate = "";
+
+    if (dateMatch) {
+      const [, monthName, day, year] = dateMatch;
+      const monthNum = {
+        jan: "01",
+        feb: "02",
+        mar: "03",
+        apr: "04",
+        may: "05",
+        jun: "06",
+        jul: "07",
+        aug: "08",
+        sep: "09",
+        oct: "10",
+        nov: "11",
+        dec: "12",
+      }[monthName.toLowerCase()];
+
+      formattedDate = `${year}-${monthNum}-${day.padStart(2, "0")}`;
+      console.log(`📅 Multi-line date parsed: ${dateLine} → ${formattedDate}`);
+    }
+
+    return {
+      date: formattedDate || new Date().toISOString().split("T")[0],
+      description: cleanDescription,
+      merchant: merchant || "Unknown",
+      amount: amount,
+      type: type,
+      confidence: "High",
+      source: "PhonePe",
+      rawData: {
+        dateLine,
+        timeLine,
+        transactionLine,
+        lineIndex: i,
+      },
+    };
+  }
 }
 
 /**
