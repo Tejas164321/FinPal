@@ -1,5 +1,6 @@
 const fs = require("fs");
 const pdfParse = require("pdf-parse");
+const { TransactionCategorizer } = require("./transactionCategorizer");
 
 /**
  * Professional PhonePe Transaction Parser
@@ -8,6 +9,7 @@ const pdfParse = require("pdf-parse");
 class PhonePeParser {
   constructor() {
     this.name = "PhonePe Professional Parser";
+    this.categorizer = new TransactionCategorizer();
   }
 
   async process(data, fileName) {
@@ -27,9 +29,14 @@ class PhonePeParser {
         return { transactions: [] };
       }
 
-      const transactions = this.parseTransactions(text);
+      let transactions = this.parseTransactions(text);
 
-      console.log(`✅ Found ${transactions.length} PhonePe transactions`);
+      // Categorize all transactions
+      transactions = await this.categorizeTransactions(transactions);
+
+      console.log(
+        `✅ Found ${transactions.length} PhonePe transactions (categorized)`,
+      );
       return {
         transactions,
         source: "PhonePe",
@@ -207,6 +214,31 @@ class PhonePeParser {
     return (
       "phonepe_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9)
     );
+  }
+
+  /**
+   * Categorize all transactions
+   */
+  async categorizeTransactions(transactions) {
+    console.log(`🏷️ Categorizing ${transactions.length} transactions...`);
+
+    const categorizedTransactions = [];
+
+    for (const transaction of transactions) {
+      const categoryInfo =
+        await this.categorizer.categorizeTransaction(transaction);
+
+      categorizedTransactions.push({
+        ...transaction,
+        category: categoryInfo.category,
+        categoryIcon: categoryInfo.icon,
+        categoryColor: categoryInfo.color,
+        categoryConfidence: categoryInfo.confidence,
+        categoryMethod: categoryInfo.method,
+      });
+    }
+
+    return categorizedTransactions;
   }
 }
 
