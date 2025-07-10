@@ -2,6 +2,7 @@ const fs = require("fs");
 const pdfParse = require("pdf-parse");
 const csv = require("csv-parser");
 const xlsx = require("xlsx");
+const { PhonePeParser } = require("./phonePeParser");
 
 /**
  * PhonePe-Specific Strategy
@@ -324,7 +325,7 @@ class PhonePeSpecificStrategy {
 class UniversalTransactionProcessor {
   constructor() {
     this.strategies = [
-      new PhonePeSpecificStrategy(),
+      new PhonePeParser(), // Professional PhonePe parser first
       new TableBasedStrategy(),
       new PatternBasedStrategy(),
       new AIHeuristicStrategy(),
