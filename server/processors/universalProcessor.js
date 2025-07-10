@@ -60,6 +60,11 @@ class PhonePeSpecificStrategy {
       return null;
     }
 
+    // Debug: Log actual transaction lines to understand the format
+    if (line.includes("DEBIT") || line.includes("CREDIT")) {
+      console.log(`🔍 PhonePe line format: "${line}"`);
+    }
+
     // PhonePe transaction pattern: Date + Time + Type + Amount + Description
     const phonepePattern =
       /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}\s+\d{1,2}:\d{2}\s+(am|pm)\s+(DEBIT|CREDIT)₹([\d,]+(?:\.\d{2})?)(.+)$/i;
@@ -76,9 +81,14 @@ class PhonePeSpecificStrategy {
         const amount = parseFloat(amountStr.replace(/,/g, ""));
 
         if (amount > 0 && amount < 10000000 && merchant.length > 2) {
-          // Reasonable limits
+          // Need to find date from previous lines or context
+          const extractedDate = this.findDateFromContext(
+            lineIndex,
+            this.allLines,
+          );
+
           return {
-            date: "", // Will need to be filled from context
+            date: extractedDate || new Date().toISOString().split("T")[0],
             description: `${prefix} ${merchant.trim()}`,
             merchant: merchant.trim(),
             amount: amount,
