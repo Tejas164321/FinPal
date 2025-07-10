@@ -238,15 +238,16 @@ class PhonePeSpecificStrategy {
     );
 
     // Parse the transaction line for amount and details
-    const debitPattern = /(.*?)\s+DEBIT\s+₹([\d,]+(?:\.\d{2})?)/i;
-    const creditPattern = /(.*?)\s+CREDIT\s+₹([\d,]+(?:\.\d{2})?)/i;
+    // PhonePe format: "DEBIT₹20,000Paid to RAHIM KUTUBUDDIN PINJARI"
+    const debitPattern = /^DEBIT₹([\d,]+(?:\.\d{2})?)(.*)/i;
+    const creditPattern = /^CREDIT₹([\d,]+(?:\.\d{2})?)(.*)/i;
 
     let match =
       transactionLine.match(debitPattern) ||
       transactionLine.match(creditPattern);
     if (!match) return null;
 
-    const [, description, amountStr] = match;
+    const [, amountStr, description] = match;
     const amount = parseFloat(amountStr.replace(/,/g, ""));
     const type = transactionLine.includes("CREDIT") ? "credit" : "debit";
 
