@@ -169,6 +169,50 @@ class PhonePeSpecificStrategy {
       rawData: { originalLine: line, lineIndex },
     };
   }
+
+  findDateFromContext(lineIndex, allLines) {
+    // Look backwards from current line to find the most recent date
+    for (let i = lineIndex - 1; i >= Math.max(0, lineIndex - 10); i--) {
+      const line = allLines[i];
+      if (!line) continue;
+
+      // Look for PhonePe date patterns in previous lines
+      const datePatterns = [
+        /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2}),\s+(\d{4})\s+\d{1,2}:\d{2}\s+(am|pm)/i,
+        /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2}),\s+(\d{4})/i,
+      ];
+
+      for (const pattern of datePatterns) {
+        const match = line.match(pattern);
+        if (match) {
+          const [, monthName, day, year] = match;
+          const monthNum = {
+            jan: "01",
+            feb: "02",
+            mar: "03",
+            apr: "04",
+            may: "05",
+            jun: "06",
+            jul: "07",
+            aug: "08",
+            sep: "09",
+            oct: "10",
+            nov: "11",
+            dec: "12",
+          }[monthName.toLowerCase()];
+
+          const formattedDate = `${year}-${monthNum}-${day.padStart(2, "0")}`;
+          console.log(
+            `📅 Found context date: ${match[0]} → ${formattedDate} (line ${i})`,
+          );
+          return formattedDate;
+        }
+      }
+    }
+
+    console.log(`⚠️ No date found in context for line ${lineIndex}`);
+    return null;
+  }
 }
 
 /**
