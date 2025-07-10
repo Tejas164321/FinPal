@@ -1,116 +1,52 @@
-/**
- * Professional PhonePe Transaction Statement Parser
- *
- * Handles PhonePe PDF statements with 100% accuracy
- * Supports multi-page statements with complex formatting
- * Production-ready parser for FinPal transaction processing
- */
-
 const fs = require("fs");
 const pdfParse = require("pdf-parse");
 
+/**
+ * Professional PhonePe Transaction Parser
+ * Clean, accurate, production-ready implementation
+ */
 class PhonePeParser {
   constructor() {
     this.name = "PhonePe Professional Parser";
-    this.supportedFormats = ["PDF"];
-    this.confidence = "High";
   }
 
-  /**
-   * Main processing method for PhonePe PDF statements
-   */
-  async processFile(filePath, fileName) {
+  async process(data, fileName) {
     try {
-      console.log(`🏦 PhonePe Parser: Processing ${fileName}`);
+      console.log(`🔍 PhonePe Parser: Processing ${fileName}`);
 
-      // Extract text from PDF
-      const pdfText = await this.extractPDFText(filePath);
-
-      // Validate it's a PhonePe statement
-      if (!this.isPhonePeStatement(pdfText)) {
-        console.log("❌ Not a PhonePe statement");
-        return { transactions: [], source: "Unknown", confidence: "None" };
+      // Only process PhonePe files
+      if (!fileName.toLowerCase().includes("phonepe")) {
+        return { transactions: [] };
       }
 
-      // Extract statement metadata
-      const metadata = this.extractMetadata(pdfText);
-      console.log(
-        `📊 PhonePe Statement: ${metadata.accountNumber} (${metadata.dateRange})`,
-      );
+      const text = data.fullText || data.lines.join("\n");
 
-      // Parse all transactions
-      const transactions = this.parseTransactions(pdfText);
+      // Validate it's a PhonePe statement
+      if (!this.isPhonePeStatement(text)) {
+        console.log("❌ Not a valid PhonePe statement");
+        return { transactions: [] };
+      }
 
-      console.log(
-        `✅ PhonePe Parser: Found ${transactions.length} transactions`,
-      );
-      console.log(`📅 Date range: ${metadata.dateRange}`);
+      const transactions = this.parseTransactions(text);
 
+      console.log(`✅ Found ${transactions.length} PhonePe transactions`);
       return {
         transactions,
         source: "PhonePe",
         confidence: "High",
-        metadata,
-        strategy: "PhonePe Professional Parser",
       };
     } catch (error) {
       console.error("❌ PhonePe Parser error:", error);
-      throw error;
+      return { transactions: [] };
     }
   }
 
-  /**
-   * Extract text from PDF file
-   */
-  async extractPDFText(filePath) {
-    const dataBuffer = fs.readFileSync(filePath);
-    const pdfData = await pdfParse(dataBuffer);
-    return pdfData.text;
-  }
-
-  /**
-   * Validate if this is a PhonePe statement
-   */
   isPhonePeStatement(text) {
-    const phonePeIndicators = [
-      "Transaction Statement for",
-      "support.phonepe.com",
-      "PhonePe Terms & Conditions",
-      "This is a system generated statement",
-    ];
-
-    return phonePeIndicators.some((indicator) => text.includes(indicator));
-  }
-
-  /**
-   * Extract statement metadata (account, date range)
-   */
-  extractMetadata(text) {
-    const lines = text.split("\n").map((line) => line.trim());
-
-    // Extract account number from "Transaction Statement for XXXXXXXXXX"
-    const accountMatch = text.match(/Transaction Statement for (\d+)/);
-    const accountNumber = accountMatch ? accountMatch[1] : "Unknown";
-
-    // Extract date range
-    const dateRangeMatch = text.match(
-      /(\d{1,2} \w+, \d{4}) - (\d{1,2} \w+, \d{4})/,
+    return (
+      text.includes("Transaction Statement") && text.includes("phonepe.com")
     );
-    const dateRange = dateRangeMatch
-      ? `${dateRangeMatch[1]} to ${dateRangeMatch[2]}`
-      : "Unknown";
-
-    return {
-      accountNumber,
-      dateRange,
-      source: "PhonePe",
-      pages: (text.match(/Page \d+ of \d+/g) || []).length,
-    };
   }
 
-  /**
-   * Parse all transactions from PhonePe statement
-   */
   parseTransactions(text) {
     const lines = text
       .split("\n")
@@ -118,14 +54,12 @@ class PhonePeParser {
       .filter((line) => line);
     const transactions = [];
 
-    console.log(`📝 Processing ${lines.length} lines from PhonePe PDF`);
-
-    for (let i = 0; i < lines.length - 3; i++) {
+    for (let i = 0; i < lines.length - 2; i++) {
       const transaction = this.parseTransactionGroup(lines, i);
       if (transaction) {
         transactions.push(transaction);
         console.log(
-          `✅ Transaction: ${transaction.date} - ${transaction.description} - ₹${transaction.amount}`,
+          `📝 Parsed: ${transaction.date} - ${transaction.description} - ₹${transaction.amount}`,
         );
       }
     }
@@ -133,175 +67,118 @@ class PhonePeParser {
     return transactions;
   }
 
-  /**
-   * Parse a transaction group (4-6 lines typically)
-   * Line pattern:
-   * 1. Date: "Jun 24, 2025"
-   * 2. Time: "03:13 pm"
-   * 3. Details: "Paid to RAHIM KUTUBUDDIN PINJARI DEBIT ₹20,000"
-   * 4. Transaction ID: "Transaction ID T2506241513224290430015"
-   * 5. UTR: "UTR No. 498533764693"
-   * 6. Account: "Paid by XXXXXX3645" or "Credited to XXXXXX3645"
-   */
   parseTransactionGroup(lines, startIndex) {
-    // Skip headers and footers
-    if (this.isHeaderOrFooter(lines[startIndex])) {
-      return null;
-    }
-
-    // Look for date pattern
     const dateLine = lines[startIndex];
-    const dateMatch = dateLine.match(
-      /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}$/,
-    );
-
-    if (!dateMatch) {
-      return null;
-    }
-
-    // Next line should be time
     const timeLine = lines[startIndex + 1];
-    if (!timeLine || !timeLine.match(/^\d{1,2}:\d{2}\s+(am|pm)$/)) {
-      return null;
-    }
+    const detailLine = lines[startIndex + 2];
 
-    // Next line should have transaction details
-    const detailsLine = lines[startIndex + 2];
-    if (!detailsLine) {
-      return null;
-    }
+    // PhonePe date format: "Jun 24, 2025"
+    if (!this.isValidDate(dateLine)) return null;
 
-    // Parse the details line for transaction info
-    const transactionData = this.parseDetailsLine(detailsLine);
-    if (!transactionData) {
-      return null;
-    }
+    // PhonePe time format: "03:13 pm"
+    if (!this.isValidTime(timeLine)) return null;
 
-    // Format the date properly
-    const formattedDate = this.formatDate(dateLine);
-
-    // Extract additional info (Transaction ID, UTR)
-    const additionalInfo = this.extractAdditionalInfo(lines, startIndex + 3);
+    // PhonePe transaction format: "Paid to MERCHANT DEBIT ₹amount" or "DEBIT₹amount Paid to MERCHANT"
+    const transactionData = this.parseTransactionLine(detailLine);
+    if (!transactionData) return null;
 
     return {
-      id: `phonepe_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      date: formattedDate,
-      time: timeLine,
+      id: this.generateId(),
+      date: this.formatDate(dateLine),
       description: transactionData.description,
       merchant: transactionData.merchant,
       amount: transactionData.amount,
       type: transactionData.type,
-      transactionId: additionalInfo.transactionId,
-      utrNumber: additionalInfo.utrNumber,
-      source: "PhonePe",
       confidence: "High",
+      source: "PhonePe",
       rawData: {
         dateLine,
         timeLine,
-        detailsLine,
+        detailLine,
         lineIndex: startIndex,
       },
     };
   }
 
-  /**
-   * Parse transaction details line
-   * Examples:
-   * - "Paid to RAHIM KUTUBUDDIN PINJARI DEBIT ₹20,000"
-   * - "Received from shantanu kate CREDIT ₹3,500"
-   * - "Electricity bill paid 129513205948 DEBIT ₹1,220"
-   */
-  parseDetailsLine(line) {
-    // Pattern 1: Paid to [MERCHANT] DEBIT ₹[AMOUNT]
-    const paidToMatch = line.match(
-      /^Paid to (.+?)\s+(DEBIT)\s+₹([\d,]+(?:\.\d{2})?)$/,
+  isValidDate(line) {
+    // Match: "Jun 24, 2025", "Mar 26, 2025", etc.
+    return /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}$/.test(
+      line,
     );
-    if (paidToMatch) {
-      return {
-        description: `Paid to ${paidToMatch[1]}`,
-        merchant: paidToMatch[1].trim(),
-        type: "debit",
-        amount: parseFloat(paidToMatch[3].replace(/,/g, "")),
-      };
+  }
+
+  isValidTime(line) {
+    // Match: "03:13 pm", "11:30 am", etc.
+    return /^\d{1,2}:\d{2}\s+(am|pm)$/.test(line);
+  }
+
+  parseTransactionLine(line) {
+    // Skip non-transaction lines
+    if (this.isNonTransactionLine(line)) return null;
+
+    // Pattern 1: "DEBIT₹20,000Paid to RAHIM KUTUBUDDIN PINJARI"
+    let match = line.match(/^(DEBIT|CREDIT)₹([\d,]+(?:\.\d{2})?)(.*)/);
+    if (match) {
+      const [, type, amountStr, description] = match;
+      return this.buildTransactionData(type, amountStr, description.trim());
     }
 
-    // Pattern 2: Received from [MERCHANT] CREDIT ₹[AMOUNT]
-    const receivedFromMatch = line.match(
-      /^Received from (.+?)\s+(CREDIT)\s+₹([\d,]+(?:\.\d{2})?)$/,
+    // Pattern 2: "Paid to RAHIM KUTUBUDDIN PINJARI DEBIT ₹20,000"
+    match = line.match(
+      /^(Paid to|Received from)\s+(.+?)\s+(DEBIT|CREDIT)\s+₹([\d,]+(?:\.\d{2})?)/,
     );
-    if (receivedFromMatch) {
-      return {
-        description: `Received from ${receivedFromMatch[1]}`,
-        merchant: receivedFromMatch[1].trim(),
-        type: "credit",
-        amount: parseFloat(receivedFromMatch[3].replace(/,/g, "")),
-      };
-    }
-
-    // Pattern 3: Bill payments - "Electricity bill paid 129513205948 DEBIT ₹1,220"
-    const billMatch = line.match(
-      /^(.+?)\s+(DEBIT|CREDIT)\s+₹([\d,]+(?:\.\d{2})?)$/,
-    );
-    if (billMatch) {
-      return {
-        description: billMatch[1].trim(),
-        merchant: this.extractMerchantFromBill(billMatch[1]),
-        type: billMatch[2].toLowerCase(),
-        amount: parseFloat(billMatch[3].replace(/,/g, "")),
-      };
+    if (match) {
+      const [, prefix, merchant, type, amountStr] = match;
+      return this.buildTransactionData(
+        type,
+        amountStr,
+        `${prefix} ${merchant}`,
+      );
     }
 
     return null;
   }
 
-  /**
-   * Extract merchant name from bill payment descriptions
-   */
-  extractMerchantFromBill(description) {
-    if (description.toLowerCase().includes("electricity")) {
-      return "Electricity Board";
-    }
-    if (description.toLowerCase().includes("gas")) {
-      return "Gas Company";
-    }
-    if (description.toLowerCase().includes("water")) {
-      return "Water Board";
-    }
-    return "Utility Company";
+  isNonTransactionLine(line) {
+    const skipPatterns = [
+      /^Transaction ID/,
+      /^UTR No\./,
+      /^Paid by/,
+      /^Credited to/,
+      /^XXXXXX/,
+      /^Page \d+ of \d+$/,
+      /^Transaction Statement/,
+      /^For any queries/,
+      /^This is a system/,
+    ];
+
+    return skipPatterns.some((pattern) => pattern.test(line));
   }
 
-  /**
-   * Extract Transaction ID and UTR from following lines
-   */
-  extractAdditionalInfo(lines, startIndex) {
-    let transactionId = "";
-    let utrNumber = "";
+  buildTransactionData(type, amountStr, description) {
+    const amount = parseFloat(amountStr.replace(/,/g, ""));
 
-    // Look ahead 3-4 lines for Transaction ID and UTR
-    for (let i = startIndex; i < startIndex + 4 && i < lines.length; i++) {
-      const line = lines[i];
+    // Validate amount
+    if (amount <= 0 || amount > 10000000) return null;
 
-      // Transaction ID pattern
-      const tidMatch = line.match(/Transaction ID ([A-Z0-9]+)/);
-      if (tidMatch) {
-        transactionId = tidMatch[1];
-      }
-
-      // UTR Number pattern
-      const utrMatch = line.match(/UTR No\. (\d+)/);
-      if (utrMatch) {
-        utrNumber = utrMatch[1];
-      }
+    // Extract merchant
+    let merchant = "Unknown";
+    if (description.startsWith("Paid to ")) {
+      merchant = description.replace("Paid to ", "").trim();
+    } else if (description.startsWith("Received from ")) {
+      merchant = description.replace("Received from ", "").trim();
     }
 
-    return { transactionId, utrNumber };
+    return {
+      type: type.toLowerCase(),
+      amount,
+      description: description.substring(0, 100),
+      merchant: merchant.substring(0, 50),
+    };
   }
 
-  /**
-   * Format PhonePe date to ISO format
-   * "Jun 24, 2025" -> "2025-06-24"
-   */
   formatDate(dateString) {
+    // Convert "Jun 24, 2025" to "2025-06-24"
     const months = {
       Jan: "01",
       Feb: "02",
@@ -317,67 +194,19 @@ class PhonePeParser {
       Dec: "12",
     };
 
-    const match = dateString.match(
-      /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2}),\s+(\d{4})$/,
-    );
-    if (!match) {
-      console.warn(`⚠️ Could not parse date: ${dateString}`);
-      return new Date().toISOString().split("T")[0]; // Fallback to today
-    }
+    const match = dateString.match(/^(\w{3})\s+(\d{1,2}),\s+(\d{4})$/);
+    if (!match) return new Date().toISOString().split("T")[0];
 
     const [, monthName, day, year] = match;
     const month = months[monthName];
-    const formattedDate = `${year}-${month}-${day.padStart(2, "0")}`;
 
-    console.log(`📅 Date parsed: ${dateString} → ${formattedDate}`);
-    return formattedDate;
+    return `${year}-${month}-${day.padStart(2, "0")}`;
   }
 
-  /**
-   * Skip header/footer lines
-   */
-  isHeaderOrFooter(line) {
-    const skipPatterns = [
-      /^Transaction Statement for/,
-      /^Date Transaction Details Type Amount$/,
-      /^Page \d+ of \d+$/,
-      /^This is a system generated statement/,
-      /^For any queries, contact us at/,
-      /^terms-conditions/,
-      /^Disclaimer/,
-      /^etc\. through SMS/,
-      /^https:\/\/support\.phonepe\.com/,
-      /^XXXXXX\d+$/,
-      /^Paid by$/,
-      /^Credited to$/,
-      /^\d+ \w+, \d+ - \d+ \w+, \d+$/, // Date range line
-    ];
-
-    return skipPatterns.some((pattern) => pattern.test(line));
-  }
-
-  /**
-   * Adapter method for UniversalTransactionProcessor compatibility
-   * This method transforms the data format to match what processFile expects
-   */
-  async process(data, fileName) {
-    // Check if this is a PhonePe file
-    if (!fileName.toLowerCase().includes("phonepe")) {
-      console.log("🔍 PhonePe Parser: Not a PhonePe file, skipping...");
-      return { transactions: [] };
-    }
-
-    // For the professional parser, we need to work with the original PDF file
-    // Since we have text data, we'll need to create a temporary file or work with the text directly
-    const transactions = this.parseTransactions(
-      data.fullText || data.lines.join("\n"),
+  generateId() {
+    return (
+      "phonepe_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9)
     );
-
-    return {
-      transactions,
-      source: "PhonePe",
-      confidence: "High",
-    };
   }
 }
 
