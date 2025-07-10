@@ -22,6 +22,9 @@ class PhonePeSpecificStrategy {
     const transactions = [];
     const lines = data.lines || data.rawData.map((d) => d.content);
 
+    // Store lines for context-based date extraction
+    this.allLines = lines;
+
     // PhonePe statement has structured table format
     // Pattern: Date Transaction Details Type Amount
     // Example: "Jun 24, 2025 03:13 pm DEBIT₹20,000Paid to RAHIM KUTUBUDDIN PINJARI"
