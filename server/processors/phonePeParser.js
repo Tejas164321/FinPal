@@ -355,6 +355,30 @@ class PhonePeParser {
 
     return skipPatterns.some((pattern) => pattern.test(line));
   }
+
+  /**
+   * Adapter method for UniversalTransactionProcessor compatibility
+   * This method transforms the data format to match what processFile expects
+   */
+  async process(data, fileName) {
+    // Check if this is a PhonePe file
+    if (!fileName.toLowerCase().includes("phonepe")) {
+      console.log("🔍 PhonePe Parser: Not a PhonePe file, skipping...");
+      return { transactions: [] };
+    }
+
+    // For the professional parser, we need to work with the original PDF file
+    // Since we have text data, we'll need to create a temporary file or work with the text directly
+    const transactions = this.parseTransactions(
+      data.fullText || data.lines.join("\n"),
+    );
+
+    return {
+      transactions,
+      source: "PhonePe",
+      confidence: "High",
+    };
+  }
 }
 
 module.exports = { PhonePeParser };
