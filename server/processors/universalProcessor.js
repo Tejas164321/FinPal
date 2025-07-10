@@ -25,17 +25,17 @@ class PhonePeSpecificStrategy {
     // Store lines for context-based date extraction
     this.allLines = lines;
 
-    // PhonePe statement has structured table format
-    // Pattern: Date Transaction Details Type Amount
-    // Example: "Jun 24, 2025 03:13 pm DEBIT₹20,000Paid to RAHIM KUTUBUDDIN PINJARI"
+    // PhonePe statement has multi-line format:
+    // Line 1: "Jun 24, 2025"
+    // Line 2: "03:13 pm"
+    // Line 3: "Paid to RAHIM KUTUBUDDIN PINJARI DEBIT ₹20,000"
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const transaction = this.parsePhonePeTransaction(line, i);
+    for (let i = 0; i < lines.length - 2; i++) {
+      const transaction = this.parsePhonePeMultiLineTransaction(lines, i);
       if (transaction) {
         transactions.push(transaction);
         console.log(
-          `✅ PhonePe transaction: ${transaction.description} - ₹${transaction.amount}`,
+          `✅ PhonePe transaction: ${transaction.date} - ${transaction.description} - ₹${transaction.amount}`,
         );
       }
     }
