@@ -417,12 +417,17 @@ class TransactionCategorizer {
   buildAIPrompt(transaction) {
     const availableCategories = this.getCategoryNames().join(", ");
 
+    const amountValue = Number(transaction?.amount);
+    const formattedAmount = Number.isFinite(amountValue)
+      ? amountValue.toFixed(2)
+      : String(transaction?.amount ?? "");
+
     return `Categorize this transaction into one of these categories: ${availableCategories}
 
 Transaction Details:
 - Description: ${transaction.description ?? ""}
 - Merchant: ${transaction.merchant ?? ""}
-- Amount: ₹${Number(transaction.amount ?? 0).toFixed(2)}
+- Amount: ₹${formattedAmount}
 - Type: ${transaction.type ?? ""}
 
 Respond with ONLY the category name from the list above. If none fit perfectly, choose the closest match.`;
