@@ -159,6 +159,42 @@ class TransactionStore {
     }
   }
 
+  private normalizeTransaction(transaction: Transaction): Transaction {
+    const amount = Number(transaction.amount) || 0;
+    const type = transaction.type === "credit" ? "credit" : "debit";
+    const normalizedCategory = normalizeCategoryName(transaction.category);
+    const meta = getCategoryMeta(normalizedCategory);
+    const confidence: ConfidenceLevel =
+      transaction.confidence ?? transaction.categoryConfidence ?? "Medium";
+    const method: CategorizationMethod | string =
+      transaction.categoryMethod ?? transaction.categorizedBy ?? "Default";
+    const source: TransactionSource = transaction.source ?? "Unknown";
+
+    let sanitizedDate: string;
+    try {
+      sanitizedDate = new Date(transaction.date).toISOString();
+    } catch (error) {
+      console.warn("Invalid transaction date, using now():", transaction);
+      sanitizedDate = new Date().toISOString();
+    }
+
+    return {
+      ...transaction,
+      amount: Math.abs(amount),
+      type,
+      date: sanitizedDate,
+      category: normalizedCategory,
+      source,
+      confidence,
+      categorizedBy:
+        (typeof method === "string" ? method : "Default") || "Default",
+      categoryIcon: transaction.categoryIcon ?? meta.icon,
+      categoryColor: transaction.categoryColor ?? meta.color,
+      categoryConfidence: transaction.categoryConfidence ?? confidence,
+      categoryMethod: typeof method === "string" ? method : "Default",
+    };
+  }
+
   // Subscribe to transaction updates
   subscribe(callback: (transactions: Transaction[]) => void) {
     this.subscribers.push(callback);
