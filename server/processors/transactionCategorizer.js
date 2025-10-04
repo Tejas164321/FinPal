@@ -519,8 +519,14 @@ async function categorizeTransactions(transactions) {
   const categorized = [];
 
   for (const transaction of transactions) {
-    if (transaction?.category) {
-      categorized.push(transaction);
+    if (transaction?.category && transaction?.categoryConfidence) {
+      categorized.push({
+        ...transaction,
+        source: transaction?.source || "Unknown",
+        confidence: transaction?.confidence || transaction.categoryConfidence,
+        categorizedBy:
+          transaction?.categorizedBy || transaction.categoryMethod || "Default",
+      });
       continue;
     }
 
