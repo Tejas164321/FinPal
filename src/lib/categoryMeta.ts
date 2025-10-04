@@ -99,8 +99,12 @@ const CATEGORY_ALIASES: Record<string, string> = {
   "Health": "Health & Medical",
 };
 
+export function normalizeCategoryName(category: string): string {
+  return CATEGORY_ALIASES[category] ?? category;
+}
+
 export function getCategoryMeta(category: string): CategoryMeta {
-  const normalized = CATEGORY_ALIASES[category] ?? category;
+  const normalized = normalizeCategoryName(category);
   return CATEGORY_META[normalized] ?? CATEGORY_META.Others;
 }
 
