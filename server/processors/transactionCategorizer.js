@@ -298,6 +298,10 @@ class TransactionCategorizer {
     };
   }
 
+  getCategoryNames() {
+    return Object.values(this.categories).map((cat) => cat.name);
+  }
+
   /**
    * Main categorization method
    */
@@ -357,11 +361,23 @@ class TransactionCategorizer {
    * Keyword-based categorization
    */
   categorizeByKeywords(transaction) {
-    const text =
-      `${transaction.description} ${transaction.merchant}`.toLowerCase();
+    const text = [
+      transaction?.description,
+      transaction?.merchant,
+      transaction?.notes,
+      transaction?.type,
+      transaction?.rawData?.detailLine,
+    ]
+      .flat()
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
 
-    // Find matching category
-    for (const [key, category] of Object.entries(this.categories)) {
+    if (!text) {
+      return null;
+    }
+
+    for (const category of Object.values(this.categories)) {
       const hasMatch = category.keywords.some((keyword) =>
         text.includes(keyword.toLowerCase()),
       );
@@ -399,17 +415,15 @@ class TransactionCategorizer {
    * Build AI prompt for categorization
    */
   buildAIPrompt(transaction) {
-    const availableCategories = Object.values(this.categories)
-      .map((cat) => cat.name)
-      .join(", ");
+    const availableCategories = this.getCategoryNames().join(", ");
 
     return `Categorize this transaction into one of these categories: ${availableCategories}
 
 Transaction Details:
-- Description: ${transaction.description}
-- Merchant: ${transaction.merchant}
-- Amount: ₹${transaction.amount}
-- Type: ${transaction.type}
+- Description: ${transaction.description ?? ""}
+- Merchant: ${transaction.merchant ?? ""}
+- Amount: ₹${Number(transaction.amount ?? 0).toFixed(2)}
+- Type: ${transaction.type ?? ""}
 
 Respond with ONLY the category name from the list above. If none fit perfectly, choose the closest match.`;
   }
@@ -491,4 +505,28 @@ Respond with ONLY the category name from the list above. If none fit perfectly, 
   }
 }
 
-module.exports = { TransactionCategorizer };
+async function categorizeTransactions(transactions) {
+  if (!Array.isArray(transactions) || transactions.length === 0) {
+    return [];
+  }
+
+  const categorizer = new TransactionCategorizer();
+  const categorized = [];
+
+  for (const transaction of transactions) {
+    const categoryInfo = await categorizer.categorizeTransaction(transaction);
+
+    categorized.push({
+      ...transaction,
+      category: categoryInfo.category,
+      categoryIcon: categoryInfo.icon,
+      categoryColor: categoryInfo.color,
+      categoryConfidence: categoryInfo.confidence,
+      categoryMethod: categoryInfo.method,
+    });
+  }
+
+  return categorized;
+}
+
+module.exports = { TransactionCategorizer, categorizeTransactions };
