@@ -1,15 +1,37 @@
+export type TransactionSource =
+  | "GPay"
+  | "PhonePe"
+  | "Paytm"
+  | "Bank"
+  | "Wallet"
+  | "Unknown";
+
+export type CategorizationMethod =
+  | "Keywords"
+  | "AI"
+  | "Manual"
+  | "Default"
+  | "Rule";
+
+export type ConfidenceLevel = "High" | "Medium" | "Low";
+
 export interface Transaction {
   id: string;
-  date: Date;
+  date: string;
   description: string;
   amount: number;
   type: "debit" | "credit";
   category: string;
-  source: "GPay" | "PhonePe" | "Paytm" | "Bank" | "Unknown";
-  confidence: "High" | "Medium" | "Low";
-  categorizedBy: "Rule" | "AI";
+  source: TransactionSource;
+  confidence: ConfidenceLevel;
+  categorizedBy?: CategorizationMethod;
   merchant?: string;
   upiTransactionId?: string;
+  rawData?: Record<string, unknown>;
+  categoryIcon?: string;
+  categoryColor?: string;
+  categoryConfidence?: ConfidenceLevel;
+  categoryMethod?: CategorizationMethod | string;
 }
 
 export interface ProcessingResult {
@@ -18,10 +40,10 @@ export interface ProcessingResult {
     totalTransactions: number;
     totalCredits: number;
     totalDebits: number;
-    dateRange: { from: Date; to: Date };
+    dateRange: { from: string; to: string };
     categories: { [key: string]: number };
   };
-  source: "GPay" | "PhonePe" | "Paytm" | "Bank" | "Unknown";
+  source: TransactionSource;
   errors: string[];
 }
 
@@ -90,8 +112,8 @@ export const categorizeTransaction = (
   description: string,
 ): {
   category: string;
-  confidence: "High" | "Medium" | "Low";
-  source: "Rule" | "AI";
+  confidence: ConfidenceLevel;
+  source: CategorizationMethod;
 } => {
   const desc = description.toLowerCase();
 
@@ -224,15 +246,17 @@ export const parseCSV = (content: string): Transaction[] => {
 
       transactions.push({
         id: Math.random().toString(36).substr(2, 9),
-        date: new Date(dateStr),
+        date: new Date(dateStr).toISOString(),
         description,
         amount: Math.abs(amount),
         type: amount < 0 ? "debit" : "credit",
         category: categorization.category,
-        source: "Unknown", // Will be set by the calling function
+        source: "Unknown",
         confidence: categorization.confidence,
         categorizedBy: categorization.source,
-        merchant: description.split(" ")[0], // Simple merchant extraction
+        merchant: description.split(" ")[0],
+        categoryConfidence: categorization.confidence,
+        categoryMethod: categorization.source,
       });
     }
   }
@@ -269,11 +293,11 @@ export const generateSummary = (transactions: Transaction[]) => {
     .reduce((sum, t) => sum + t.amount, 0);
 
   const dates = transactions
-    .map((t) => t.date)
+    .map((t) => new Date(t.date))
     .sort((a, b) => a.getTime() - b.getTime());
   const dateRange = {
-    from: dates[0] || new Date(),
-    to: dates[dates.length - 1] || new Date(),
+    from: dates[0]?.toISOString() || new Date().toISOString(),
+    to: dates[dates.length - 1]?.toISOString() || new Date().toISOString(),
   };
 
   const categories: { [key: string]: number } = {};
