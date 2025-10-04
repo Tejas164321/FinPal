@@ -22,13 +22,16 @@ class TransactionStore {
     console.log(`🔧 Has sample data: ${this.hasSampleData()}`);
     console.log(`🔧 Sample transaction from new data:`, newTransactions[0]);
 
-    // Clear sample data when adding real uploaded data
     if (newTransactions.length > 0 && this.hasSampleData()) {
       console.log(`🔧 Clearing sample data before adding real transactions`);
       this.clearSampleData();
     }
 
-    this.transactions = [...this.transactions, ...newTransactions];
+    const normalizedTransactions = newTransactions.map((transaction) =>
+      this.normalizeTransaction(transaction),
+    );
+
+    this.transactions = [...this.transactions, ...normalizedTransactions];
     console.log(`🔧 Store size after adding: ${this.transactions.length}`);
     this.notifySubscribers();
   }
