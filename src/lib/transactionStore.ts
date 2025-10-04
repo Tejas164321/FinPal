@@ -1,5 +1,13 @@
 import { type Transaction } from "./fileProcessing";
 
+import type {
+  Transaction,
+  ConfidenceLevel,
+  CategorizationMethod,
+  TransactionSource,
+} from "./fileProcessing";
+import { getCategoryMeta, normalizeCategoryName } from "./categoryMeta";
+
 // Simple in-memory store (in production, this would be connected to a database)
 class TransactionStore {
   private transactions: Transaction[] = [];
