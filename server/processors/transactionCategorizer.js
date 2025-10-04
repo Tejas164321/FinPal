@@ -519,6 +519,11 @@ async function categorizeTransactions(transactions) {
   const categorized = [];
 
   for (const transaction of transactions) {
+    if (transaction?.category) {
+      categorized.push(transaction);
+      continue;
+    }
+
     const categoryInfo = await categorizer.categorizeTransaction(transaction);
 
     categorized.push({
