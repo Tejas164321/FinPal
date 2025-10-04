@@ -76,8 +76,8 @@ class TransactionStore {
       .sort((a, b) => a.getTime() - b.getTime());
 
     const dateRange = {
-      from: dates[0] || new Date(),
-      to: dates[dates.length - 1] || new Date(),
+      from: dates[0]?.toISOString() || new Date().toISOString(),
+      to: dates[dates.length - 1]?.toISOString() || new Date().toISOString(),
     };
 
     // Category breakdown
