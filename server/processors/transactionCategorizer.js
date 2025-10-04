@@ -526,13 +526,22 @@ async function categorizeTransactions(transactions) {
 
     const categoryInfo = await categorizer.categorizeTransaction(transaction);
 
+    const confidence =
+      transaction?.confidence || categoryInfo.confidence || "Medium";
+    const categorizedBy =
+      transaction?.categorizedBy || categoryInfo.method || "Default";
+    const source = transaction?.source || "Unknown";
+
     categorized.push({
       ...transaction,
+      source,
       category: categoryInfo.category,
       categoryIcon: categoryInfo.icon,
       categoryColor: categoryInfo.color,
       categoryConfidence: categoryInfo.confidence,
       categoryMethod: categoryInfo.method,
+      confidence,
+      categorizedBy,
     });
   }
 
