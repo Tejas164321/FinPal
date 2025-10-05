@@ -50,38 +50,93 @@ FinPal is a modern, AI-powered personal finance management web application desig
 - **AI Insights** (`/ai-insights`): Gemini-powered analysis and chat
 - **Investments** (`/investments`): SIP calculators and portfolio comparison
 
-## 🛠 Technical Stack
+## 🛠 Technical Stack (Detailed Breakdown)
 
-### Frontend
+### Frontend Architecture
+The frontend is built as a React-based single-page application with modern tooling and a comprehensive UI component library.
 
-- **React 18** with TypeScript
-- **Vite** for build tooling and dev server
-- **React Router 6** for client-side routing
-- **TailwindCSS 3** with custom theme
-- **Framer Motion** for animations
-- **Recharts** for data visualization
-- **Radix UI** for accessible components
-- **Lucide React** for icons
+**Core Framework & Language:**
+- **React 18** with TypeScript: Provides type-safe component development with the latest React features like concurrent rendering and automatic batching
+- **Vite**: Modern build tool offering fast development server, instant hot module replacement (HMR), and optimized production builds
 
-### Styling Architecture
+**Routing & State Management:**
+- **React Router 6**: Client-side routing for navigation between different application pages
+- **@tanstack/react-query**: Powerful data fetching and caching library for server state management, API calls, and background updates
 
-- **Custom Tailwind Theme**: Extended with FinPal brand colors and glassmorphism utilities
-- **CSS Variables**: HSL-based color system for easy theming
-- **Responsive Design**: Mobile-first breakpoints
-- **Component Library**: Comprehensive UI components with variants
+**Styling & UI Components:**
+- **TailwindCSS 3**: Utility-first CSS framework with custom theme configuration including FinPal's brand colors (purple gradients) and glassmorphism effects
+- **Radix UI**: Complete set of unstyled, accessible UI primitives (accordion, dialog, dropdown-menu, popover, tabs, toast, tooltip, etc.) providing the foundation for consistent, accessible components
+- **Framer Motion**: Animation library for smooth transitions, hover effects, and interactive UI elements
+- **Lucide React**: Modern icon library with consistent, scalable SVG icons
+- **shadcn/ui**: Component library built on top of Radix UI and Tailwind, providing pre-built, customizable UI components
 
-### Code Structure
+**Data Visualization:**
+- **Recharts**: React-based charting library for creating interactive financial charts (area charts for trends, pie charts for category breakdowns)
 
+**Form Handling & Validation:**
+- **React Hook Form**: Performant forms with easy validation
+- **Zod**: TypeScript-first schema validation for form data and API responses
+- **@hookform/resolvers**: Integration between React Hook Form and Zod
+
+**Additional Utilities:**
+- **date-fns**: Modern JavaScript date utility library for date manipulation and formatting
+- **clsx & tailwind-merge**: Utility functions for conditional CSS class management
+- **class-variance-authority**: Component variant management for consistent styling
+- **react-dropzone**: File upload interface for transaction data
+- **sonner**: Toast notification system
+- **next-themes**: Theme management (though primarily dark theme focused)
+
+**Development Tools:**
+- **TypeScript 5.5**: Full type checking and modern JavaScript features
+- **Vitest**: Fast unit testing framework
+- **Prettier**: Code formatting
+- **ESLint**: Code linting (implied through tooling)
+
+### Backend Architecture
+The backend is a lightweight Node.js API server focused on file processing and transaction analysis.
+
+**Runtime & Framework:**
+- **Node.js** with **Express 4.18**: Minimal web framework for handling HTTP requests and file uploads
+
+**File Processing:**
+- **Multer**: Middleware for handling multipart/form-data (file uploads)
+- **csv-parser**: Stream-based CSV parsing for transaction data
+- **pdf-parse**: PDF text extraction for bank statements
+- **xlsx**: Excel file processing for spreadsheet-based transaction data
+
+**Utilities:**
+- **CORS**: Cross-origin resource sharing for frontend-backend communication
+- **dotenv**: Environment variable management
+
+**Development:**
+- **Nodemon**: Automatic server restart during development
+
+### Project Structure & Architecture
 ```
-src/
-├── components/
-│   ├── ui/              # Reusable UI components (buttons, cards, etc.)
-│   └── layout/          # Layout components (Sidebar, MobileNav, AppLayout)
-├── pages/               # Route components
-├── lib/                 # Utility functions
-├── hooks/               # Custom React hooks
-└── App.tsx              # Main app with routing
+FinPal/
+├── src/                    # Frontend source code
+│   ├── components/         # Reusable UI components
+│   │   ├── ui/            # shadcn/ui components
+│   │   ├── layout/        # Layout components (sidebar, navigation)
+│   │   └── charts/        # Chart components
+│   ├── pages/             # Route-based page components
+│   ├── lib/               # Utility functions and configurations
+│   ├── hooks/             # Custom React hooks
+│   └── App.tsx            # Main application component
+├── server/                # Backend API
+│   ├── processors/        # File processing modules
+│   └── server.js          # Express server setup
+├── public/                # Static assets
+└── Configuration files    # Vite, Tailwind, TypeScript configs
 ```
+
+### Key Technical Decisions
+- **TypeScript**: Ensures type safety across the entire application
+- **Component-Driven Development**: Modular, reusable components with consistent APIs
+- **Mobile-First Responsive Design**: Optimized for mobile devices with progressive enhancement
+- **Performance Optimization**: Lazy loading ready, optimized bundle sizes, and efficient rendering
+- **Accessibility**: Semantic HTML and ARIA attributes for inclusive design
+- **AI Integration Ready**: Architecture prepared for Google Gemini AI API integration
 
 ## 🎯 Design Principles
 
