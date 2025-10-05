@@ -1,6 +1,13 @@
-# FinPal - AI-Powered Personal Finance Management
+# 💰 FinPal — AI-Powered Personal Finance Tracker
 
-FinPal is a modern, AI-powered personal finance management web application designed specifically for Indian users who want to analyze and track their UPI-based digital spending.
+[![Made with Vite](https://img.shields.io/badge/Made%20with-Vite-blueviolet?style=flat-square&logo=vite)]()
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue?style=flat-square&logo=typescript)]()
+[![TailwindCSS](https://img.shields.io/badge/Styled%20with-TailwindCSS-38B2AC?style=flat-square&logo=tailwind-css)]()
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)]()
+
+> FinPal helps Indian users manage their digital money smartly 💸 — powered by AI insights, UPI transaction analysis, and a beautiful dark glassmorphism dashboard.
+
+![FinPal Dashboard Preview](./preview.png)
 
 ## 🚀 Features
 
