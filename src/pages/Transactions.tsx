@@ -203,7 +203,14 @@ const Transactions = () => {
     });
 
     return sorted;
-  }, [transactions, searchTerm, selectedCategory, selectedType, sortBy, sortOrder]);
+  }, [
+    transactions,
+    searchTerm,
+    selectedCategory,
+    selectedType,
+    sortBy,
+    sortOrder,
+  ]);
 
   const totals = useMemo(() => {
     const debits = filteredTransactions
@@ -310,13 +317,16 @@ const Transactions = () => {
     });
   }, []);
 
-  const formatAmount = useCallback((amount: number, type: "debit" | "credit") => {
-    const normalizedAmount = Number.isFinite(amount)
-      ? amount
-      : Number(amount) || 0;
-    const formatted = normalizedAmount.toLocaleString("en-IN");
-    return type === "credit" ? `+₹${formatted}` : `-₹${formatted}`;
-  }, []);
+  const formatAmount = useCallback(
+    (amount: number, type: "debit" | "credit") => {
+      const normalizedAmount = Number.isFinite(amount)
+        ? amount
+        : Number(amount) || 0;
+      const formatted = normalizedAmount.toLocaleString("en-IN");
+      return type === "credit" ? `+₹${formatted}` : `-₹${formatted}`;
+    },
+    [],
+  );
 
   const handleResetFilters = useCallback(() => {
     setSearchTerm("");
@@ -392,8 +402,8 @@ const Transactions = () => {
   const hasSampleData = transactions.some((transaction) =>
     transaction.id.startsWith("sample_"),
   );
-  const hasRealData = transactions.some((transaction) =>
-    !transaction.id.startsWith("sample_"),
+  const hasRealData = transactions.some(
+    (transaction) => !transaction.id.startsWith("sample_"),
   );
 
   const handleClearSampleData = useCallback(() => {
@@ -535,7 +545,8 @@ const Transactions = () => {
                           <div>
                             <p className="font-medium">{meta.name}</p>
                             <p className="text-xs text-foreground/50">
-                              {entry.count} transaction{entry.count > 1 ? "s" : ""}
+                              {entry.count} transaction
+                              {entry.count > 1 ? "s" : ""}
                             </p>
                           </div>
                         </div>
@@ -552,13 +563,17 @@ const Transactions = () => {
 
           <Card className="glass-card">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Categorization Confidence</CardTitle>
+              <CardTitle className="text-base">
+                Categorization Confidence
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {confidenceBreakdown.map(({ level, count, percentage }) => (
                 <div key={level} className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Badge className={cn("gap-2", CONFIDENCE_BADGE_CLASS[level])}>
+                    <Badge
+                      className={cn("gap-2", CONFIDENCE_BADGE_CLASS[level])}
+                    >
                       {level}
                     </Badge>
                     <span className="text-sm text-foreground/60">
@@ -678,10 +693,18 @@ const Transactions = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="glass border-white/10">
-                    <SelectItem value="date-desc">Date (newest first)</SelectItem>
-                    <SelectItem value="date-asc">Date (oldest first)</SelectItem>
-                    <SelectItem value="amount-desc">Amount (high to low)</SelectItem>
-                    <SelectItem value="amount-asc">Amount (low to high)</SelectItem>
+                    <SelectItem value="date-desc">
+                      Date (newest first)
+                    </SelectItem>
+                    <SelectItem value="date-asc">
+                      Date (oldest first)
+                    </SelectItem>
+                    <SelectItem value="amount-desc">
+                      Amount (high to low)
+                    </SelectItem>
+                    <SelectItem value="amount-asc">
+                      Amount (low to high)
+                    </SelectItem>
                     <SelectItem value="category-asc">Category (A–Z)</SelectItem>
                   </SelectContent>
                 </Select>
@@ -702,8 +725,8 @@ const Transactions = () => {
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
                   <span>
-                    No transactions match your filters right now. Try uploading a
-                    new file or reset the filters.
+                    No transactions match your filters right now. Try uploading
+                    a new file or reset the filters.
                   </span>
                   <div className="flex flex-wrap gap-2">
                     <Button
@@ -740,15 +763,15 @@ const Transactions = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredTransactions.map((transaction) => {
-                      const categoryMeta = getCategoryMeta(transaction.category);
+                      const categoryMeta = getCategoryMeta(
+                        transaction.category,
+                      );
                       const methodMeta = getMethodMeta(
                         transaction.categoryMethod || transaction.categorizedBy,
                       );
-                      const confidenceLevel = (
-                        transaction.categoryConfidence ||
+                      const confidenceLevel = (transaction.categoryConfidence ||
                         transaction.confidence ||
-                        "Medium"
-                      ) as ConfidenceLevel;
+                        "Medium") as ConfidenceLevel;
 
                       return (
                         <motion.tr
@@ -808,7 +831,10 @@ const Transactions = () => {
                           </TableCell>
                           <TableCell>
                             <Badge
-                              className={cn("gap-2 border", methodMeta.className)}
+                              className={cn(
+                                "gap-2 border",
+                                methodMeta.className,
+                              )}
                             >
                               <methodMeta.icon className="h-3.5 w-3.5" />
                               {methodMeta.label}
@@ -822,7 +848,10 @@ const Transactions = () => {
                                   : "text-red-300",
                               )}
                             >
-                              {formatAmount(transaction.amount, transaction.type)}
+                              {formatAmount(
+                                transaction.amount,
+                                transaction.type,
+                              )}
                             </span>
                           </TableCell>
                           <TableCell className="text-right">
@@ -857,7 +886,9 @@ const Transactions = () => {
               </div>
               <div className="grid gap-2 text-sm text-foreground/50">
                 <span>Supported formats: CSV, PDF, XLS, XLSX (max 10 MB)</span>
-                <span>We automatically categorize every line item for you.</span>
+                <span>
+                  We automatically categorize every line item for you.
+                </span>
               </div>
               <Link to="/upload">
                 <Button className="bg-purple-gradient">
