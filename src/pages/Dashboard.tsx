@@ -259,7 +259,11 @@ const Dashboard = () => {
                 Total Income
               </CardTitle>
               <button onClick={() => setBalanceVisible(!balanceVisible)}>
-                {balanceVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                {balanceVisible ? (
+                  <Eye className="h-4 w-4" />
+                ) : (
+                  <EyeOff className="h-4 w-4" />
+                )}
               </button>
             </CardHeader>
             <CardContent className="relative z-10">
@@ -406,7 +410,9 @@ const Dashboard = () => {
                       fontSize={12}
                       tickLine={false}
                       axisLine={false}
-                      tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
+                      tickFormatter={(value) =>
+                        `₹${(value / 1000).toFixed(0)}k`
+                      }
                     />
                     <Tooltip
                       contentStyle={{
@@ -535,11 +541,15 @@ const Dashboard = () => {
                         <span>{budget.category}</span>
                       </span>
                       <span className="text-sm text-foreground/70">
-                        {formatCurrency(budget.spent)} / {formatCurrency(budget.allocated)}
+                        {formatCurrency(budget.spent)} /{" "}
+                        {formatCurrency(budget.allocated)}
                       </span>
                     </div>
                     <Progress
-                      value={Math.min(100, Number(budget.percentage.toFixed(1)))}
+                      value={Math.min(
+                        100,
+                        Number(budget.percentage.toFixed(1)),
+                      )}
                       className={cn(
                         "h-2",
                         budget.exceeded ? "bg-red-900/20" : "bg-purple-900/20",
@@ -559,7 +569,8 @@ const Dashboard = () => {
                 ))
               ) : (
                 <div className="text-sm text-foreground/60">
-                  We generate dynamic category budgets once you have spending activity in the selected period.
+                  We generate dynamic category budgets once you have spending
+                  activity in the selected period.
                 </div>
               )}
             </CardContent>
@@ -641,7 +652,8 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <div className="text-sm text-foreground/60">
-                  No transactions available yet. Upload a statement to get started.
+                  No transactions available yet. Upload a statement to get
+                  started.
                 </div>
               )}
             </CardContent>

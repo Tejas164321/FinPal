@@ -48,7 +48,9 @@ const MONTH_FORMATTER = new Intl.DateTimeFormat("en-IN", {
   year: "2-digit",
 });
 
-export function sortTransactionsByDate(transactions: Transaction[]): Transaction[] {
+export function sortTransactionsByDate(
+  transactions: Transaction[],
+): Transaction[] {
   return [...transactions].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
   );
@@ -68,8 +70,20 @@ export function filterTransactionsByMonths(
   }
 
   const anchor = getAnchorDate(transactions);
-  const periodStart = new Date(anchor.getFullYear(), anchor.getMonth() - months + 1, 1);
-  const periodEnd = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0, 23, 59, 59, 999);
+  const periodStart = new Date(
+    anchor.getFullYear(),
+    anchor.getMonth() - months + 1,
+    1,
+  );
+  const periodEnd = new Date(
+    anchor.getFullYear(),
+    anchor.getMonth() + 1,
+    0,
+    23,
+    59,
+    59,
+    999,
+  );
 
   return transactions.filter((transaction) => {
     const date = new Date(transaction.date);
@@ -149,7 +163,10 @@ export function computeCategoryBreakdown(
     .filter((transaction) => transaction.type === "debit")
     .forEach((transaction) => {
       const current = spendingByCategory.get(transaction.category) ?? 0;
-      spendingByCategory.set(transaction.category, current + transaction.amount);
+      spendingByCategory.set(
+        transaction.category,
+        current + transaction.amount,
+      );
     });
 
   const sorted = Array.from(spendingByCategory.entries()).sort(
@@ -233,9 +250,7 @@ export function computeBudgetInsights(
   };
 }
 
-export function computePeriodTotals(
-  transactions: Transaction[],
-): PeriodTotals {
+export function computePeriodTotals(transactions: Transaction[]): PeriodTotals {
   if (transactions.length === 0) {
     return {
       income: 0,
