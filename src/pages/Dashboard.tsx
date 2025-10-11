@@ -526,8 +526,13 @@ const Dashboard = () => {
                   <div key={budget.category} className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium flex items-center gap-2">
-                        <span className="text-purple-200">{budget.icon}</span>
-                        {budget.category}
+                        <span
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: budget.color }}
+                          aria-hidden="true"
+                        />
+                        <span>{budget.icon}</span>
+                        <span>{budget.category}</span>
                       </span>
                       <span className="text-sm text-foreground/70">
                         {formatCurrency(budget.spent)} / {formatCurrency(budget.allocated)}
