@@ -70,7 +70,7 @@ const periodOptions = [
 type PeriodOption = (typeof periodOptions)[number];
 
 function formatCurrency(value: number) {
-  const absolute = Math.abs(Math.round(value));
+  const absolute = Math.abs(value);
   const formatted = INR_FORMATTER.format(absolute);
   return value < 0 ? `-₹${formatted}` : `₹${formatted}`;
 }
