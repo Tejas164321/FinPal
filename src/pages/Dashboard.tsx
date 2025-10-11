@@ -52,7 +52,8 @@ import {
 } from "@/lib/dashboardInsights";
 
 const INR_FORMATTER = new Intl.NumberFormat("en-IN", {
-  maximumFractionDigits: 0,
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
 });
 
 const RELATIVE_TIME_FORMATTER = new Intl.RelativeTimeFormat("en", {
