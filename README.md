@@ -237,4 +237,4 @@ This project is part of the FinPal financial management platform.
 
 ---
 
-Built with ❤️ for Indian UPI users seeking better financial insights.
+Built with ❤️ for Indian UPI users seeking better financial insights...
