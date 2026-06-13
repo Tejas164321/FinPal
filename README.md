@@ -1,4 +1,4 @@
-# 💰 FinPal — AI-Powered Personal Finance Tracker
+# 💰 FinPal AI-Powered Personal Finance Tracker
 
 [![Made with Vite](https://img.shields.io/badge/Made%20with-Vite-blueviolet?style=flat-square&logo=vite)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue?style=flat-square&logo=typescript)]()
