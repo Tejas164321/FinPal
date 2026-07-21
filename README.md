@@ -4,7 +4,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue?style=flat-square&logo=typescript)]()
 [![TailwindCSS](https://img.shields.io/badge/Styled%20with-TailwindCSS-38B2AC?style=flat-square&logo=tailwind-css)]()
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)]()
->FinPal — Your AI-powered personal finance companion for UPI transactions 🇮🇳. Analyze spending, manage budgets, and simulate investments — all in one beautiful dashboard built with Vite + React + TailwindCSS.
+>FinPal — Your AI-powered personal finance companion for UPI transactions 🇮🇳. Analyze spending, manage budgets, and simulate investments — all in one beautiful dashboard built with Vite + React + TailwindCSS..
 
 ## 🚀 Features
 
