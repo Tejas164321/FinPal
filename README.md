@@ -229,7 +229,7 @@ FinPal/
 - **Profile**: User preferences and settings
 - **AI Chat**: Natural language query interface
 - **Advanced Analytics**: Spending pattern analysis
-- **Investment Tracking**: Portfolio performance monitoring
+- **Investment Tracking**: Portfolio performance monitoring.
 
 ## 📄 License
 
