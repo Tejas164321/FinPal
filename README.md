@@ -186,6 +186,6 @@ Released under the [MIT License](./LICENSE).
 
 <div align="center">
 
-Built with ❤️ for Indian UPI users seeking better financial insights.
+Built with ❤️ for Indian UPI users seeking better financial insights...
 
 </div>
